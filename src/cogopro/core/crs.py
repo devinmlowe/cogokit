@@ -46,6 +46,8 @@ class CRS:
     ellipsoid: Any = field(default=None)
     zone: int | None = None
     hemisphere: str | None = None
+    proj_def: Any = None
+    name: str | None = None
 
     def __post_init__(self) -> None:
         if self.ellipsoid is None:
@@ -72,6 +74,30 @@ class CRS:
         """
         return cls(kind="utm", zone=zone, hemisphere=hemisphere,
                    ellipsoid=ellipsoid or _wgs84())
+
+    @classmethod
+    def state_plane(cls, epsg: int) -> CRS:
+        """Create a State Plane CRS by EPSG code."""
+        from cogopro.geodetic.state_plane import get_zone
+        zone = get_zone(epsg)
+        return cls(
+            kind="projected",
+            ellipsoid=zone.proj_def.ellipsoid,
+            proj_def=zone.proj_def,
+            name=zone.name,
+        )
+
+    @classmethod
+    def from_proj4(cls, proj4_str: str, name: str | None = None) -> CRS:
+        """Create a projected CRS from a PROJ4 string."""
+        from cogopro.geodetic.proj4 import parse_proj4
+        proj_def = parse_proj4(proj4_str)
+        return cls(
+            kind="projected",
+            ellipsoid=proj_def.ellipsoid,
+            proj_def=proj_def,
+            name=name,
+        )
 
 
 # ---- Predefined constants (lazy via property pattern) ----
@@ -124,6 +150,10 @@ def transform_point(point: Point, from_crs: CRS, to_crs: CRS) -> Point:
             ellipsoid=from_crs.ellipsoid,
         )
         lat, lon = inv.lat, inv.lon
+    elif from_crs.kind == "projected":
+        from cogopro.geodetic.projections import projection_inverse
+        inv = projection_inverse(point.easting, point.northing, from_crs.proj_def)
+        lat, lon = inv.lat, inv.lon
     else:
         raise ValueError(f"Unsupported source CRS kind: {from_crs.kind!r}")
 
@@ -132,6 +162,10 @@ def transform_point(point: Point, from_crs: CRS, to_crs: CRS) -> Point:
         new_northing, new_easting = lat, lon
     elif to_crs.kind == "utm":
         fwd = geodetic_to_utm(lat, lon, zone=to_crs.zone, ellipsoid=to_crs.ellipsoid)
+        new_northing, new_easting = fwd.northing, fwd.easting
+    elif to_crs.kind == "projected":
+        from cogopro.geodetic.projections import projection_forward
+        fwd = projection_forward(lat, lon, to_crs.proj_def)
         new_northing, new_easting = fwd.northing, fwd.easting
     else:
         raise ValueError(f"Unsupported target CRS kind: {to_crs.kind!r}")

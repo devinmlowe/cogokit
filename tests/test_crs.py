@@ -316,3 +316,132 @@ class TestJobCRSField:
         job = Job()
         job.crs = CRS.geodetic()
         assert job.crs == CRS.geodetic()
+
+
+class TestCRSProjected:
+    """Test projected CRS creation and properties."""
+
+    def test_state_plane_creation(self):
+        crs = CRS.state_plane(26945)
+        assert crs.kind == "projected"
+        assert crs.proj_def is not None
+        assert crs.proj_def.proj_type == "lcc"
+        assert crs.name is not None
+        assert "California" in crs.name
+
+    def test_from_proj4_creation(self):
+        s = (
+            "+proj=tmerc +lat_0=38.8333333333333 +lon_0=-74.5 "
+            "+k=0.9999 +x_0=150000 +y_0=0 +ellps=GRS80"
+        )
+        crs = CRS.from_proj4(s, name="Custom TM")
+        assert crs.kind == "projected"
+        assert crs.name == "Custom TM"
+        assert crs.proj_def.proj_type == "tmerc"
+
+    def test_state_plane_equality(self):
+        assert CRS.state_plane(26945) == CRS.state_plane(26945)
+
+    def test_state_plane_not_equal_different_zone(self):
+        assert CRS.state_plane(26945) != CRS.state_plane(26941)
+
+    def test_projected_not_equal_utm(self):
+        assert CRS.state_plane(26945) != CRS.utm(zone=17)
+
+    def test_projected_not_equal_geodetic(self):
+        assert CRS.state_plane(26945) != CRS.geodetic()
+
+
+class TestTransformProjected:
+    """Test point transforms involving projected CRS."""
+
+    def test_geodetic_to_state_plane(self):
+        """Transform geodetic (lat/lon) to California Zone 5."""
+        lat = math.radians(34.0522)
+        lon = math.radians(-118.2437)
+        pt = Point(northing=lat, easting=lon, number=1)
+
+        geo_crs = CRS.geodetic()
+        sp_crs = CRS.state_plane(26945)
+
+        result = transform_point(pt, geo_crs, sp_crs)
+
+        # Should be in California Zone 5 range (metres)
+        assert 1_800_000 < result.easting < 2_100_000
+        assert 400_000 < result.northing < 700_000
+
+    def test_state_plane_to_geodetic(self):
+        """Transform State Plane back to geodetic."""
+        pt = Point(northing=579000.0, easting=1856000.0, number=1)
+
+        sp_crs = CRS.state_plane(26945)
+        geo_crs = CRS.geodetic()
+
+        result = transform_point(pt, sp_crs, geo_crs)
+
+        # Should be in LA area
+        lat_deg = math.degrees(result.northing)
+        lon_deg = math.degrees(result.easting)
+        assert 33.5 < lat_deg < 35.5
+        assert -120.0 < lon_deg < -117.0
+
+    def test_round_trip_state_plane(self):
+        """Geodetic -> State Plane -> Geodetic should preserve coordinates."""
+        lat = math.radians(34.0522)
+        lon = math.radians(-118.2437)
+        original = Point(northing=lat, easting=lon, number=1)
+
+        geo_crs = CRS.geodetic()
+        sp_crs = CRS.state_plane(26945)
+
+        sp_pt = transform_point(original, geo_crs, sp_crs)
+        back = transform_point(sp_pt, sp_crs, geo_crs)
+
+        assert math.isclose(back.northing, original.northing, abs_tol=1e-10)
+        assert math.isclose(back.easting, original.easting, abs_tol=1e-10)
+
+    def test_utm_to_state_plane(self):
+        """Transform between UTM and State Plane (routes through geodetic)."""
+        pt = Point(northing=3770000.0, easting=380000.0, number=1)
+
+        utm_crs = CRS.utm(zone=11)
+        sp_crs = CRS.state_plane(26945)
+
+        result = transform_point(pt, utm_crs, sp_crs)
+
+        # Should produce valid State Plane coordinates
+        assert result.easting > 0
+        assert result.northing > 0
+
+    def test_state_plane_to_state_plane(self):
+        """Transform between two different State Plane zones."""
+        lat = math.radians(34.0522)
+        lon = math.radians(-118.2437)
+        pt_geo = Point(northing=lat, easting=lon, number=1)
+
+        geo_crs = CRS.geodetic()
+        sp_5 = CRS.state_plane(26945)  # CA zone 5
+        sp_6 = CRS.state_plane(26946)  # CA zone 6
+
+        # Go geodetic -> zone 5 -> zone 6 -> geodetic
+        pt_5 = transform_point(pt_geo, geo_crs, sp_5)
+        pt_6 = transform_point(pt_5, sp_5, sp_6)
+        pt_back = transform_point(pt_6, sp_6, geo_crs)
+
+        assert math.isclose(pt_back.northing, lat, abs_tol=1e-8)
+        assert math.isclose(pt_back.easting, lon, abs_tol=1e-8)
+
+    def test_transform_job_state_plane(self):
+        """Transform an entire job to State Plane."""
+        job = Job(name="Test")
+        job.crs = CRS.geodetic()
+        job.add_point(Point(northing=math.radians(34.0), easting=math.radians(-118.0), number=1))
+        job.add_point(Point(northing=math.radians(34.1), easting=math.radians(-118.1), number=2))
+
+        sp_crs = CRS.state_plane(26945)
+        new_job = transform_job(job, sp_crs)
+
+        assert new_job.crs == sp_crs
+        assert new_job.point_count == 2
+        p = new_job.get_point(1)
+        assert p.easting > 1_000_000  # State Plane range
