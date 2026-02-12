@@ -81,8 +81,8 @@ class TestReadFromStringIO:
 class TestWritePoints:
     def test_round_trip_space(self):
         job = Job(name="test")
-        job.add_point(Point(1, 100.0, 200.0, 10.0, "A"))
-        job.add_point(Point(2, 300.0, 400.0, 20.0, "B"))
+        job.add_point(Point(northing=100.0, easting=200.0, elevation=10.0, number=1, description="A"))
+        job.add_point(Point(northing=300.0, easting=400.0, elevation=20.0, number=2, description="B"))
 
         buf = io.StringIO()
         write_points(job, buf)
@@ -94,7 +94,7 @@ class TestWritePoints:
 
     def test_round_trip_csv(self):
         job = Job(name="test")
-        job.add_point(Point(5, 555.5, 666.6, 77.7, "MARK"))
+        job.add_point(Point(northing=555.5, easting=666.6, elevation=77.7, number=5, description="MARK"))
 
         buf = io.StringIO()
         write_points(job, buf, delimiter=Delimiter.COMMA)

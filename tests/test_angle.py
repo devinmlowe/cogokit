@@ -28,6 +28,44 @@ class TestAngleCreation:
         assert math.isclose(a.degrees, -10.5)
 
 
+class TestFromAzimuth:
+    def test_zero(self):
+        a = Angle.from_azimuth(0.0)
+        assert math.isclose(a.degrees, 0.0)
+
+    def test_pi(self):
+        a = Angle.from_azimuth(math.pi)
+        assert math.isclose(a.degrees, 180.0)
+
+    def test_negative_radians(self):
+        """Negative radians should normalize to [0, 360)."""
+        a = Angle.from_azimuth(-math.pi / 2)
+        assert math.isclose(a.degrees, 270.0)
+
+    def test_greater_than_2pi(self):
+        """Radians > 2*pi should normalize to [0, 360)."""
+        a = Angle.from_azimuth(3 * math.pi)
+        assert math.isclose(a.degrees, 180.0)
+
+    def test_full_circle(self):
+        a = Angle.from_azimuth(2 * math.pi)
+        assert math.isclose(a.degrees, 0.0, abs_tol=1e-9)
+
+
+class TestAngleFloat:
+    def test_float_returns_radians(self):
+        a = Angle.from_degrees(180.0)
+        assert math.isclose(float(a), math.pi)
+
+    def test_float_zero(self):
+        a = Angle.from_degrees(0.0)
+        assert float(a) == 0.0
+
+    def test_float_90(self):
+        a = Angle.from_degrees(90.0)
+        assert math.isclose(float(a), math.pi / 2)
+
+
 class TestHPNotation:
     def test_simple(self):
         a = Angle.from_hp_notation(45.3000)

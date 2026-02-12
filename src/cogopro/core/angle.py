@@ -72,6 +72,12 @@ class Angle:
             az = 360.0 - degrees
         return cls(_degrees=az)
 
+    @classmethod
+    def from_azimuth(cls, radians: float) -> Angle:
+        """Create an Angle from radians, normalized to [0, 360) degrees."""
+        degrees = math.degrees(radians) % 360
+        return cls(_degrees=degrees)
+
     # --- Properties ---
 
     @property
@@ -187,6 +193,10 @@ class Angle:
         if not isinstance(other, Angle):
             return NotImplemented
         return self._degrees <= other._degrees or self == other
+
+    def __float__(self) -> float:
+        """Return the angle in radians for float() conversion."""
+        return self.radians
 
     def __repr__(self) -> str:
         return f"Angle({self.to_dms_string()})"

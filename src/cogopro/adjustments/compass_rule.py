@@ -5,12 +5,14 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from cogopro.core import Point
+
 
 @dataclass
 class CompassRuleResult:
     """Result of a compass rule adjustment."""
 
-    adjusted: list[tuple[float, float]]
+    adjusted: list[Point]
     misclosure_n: float
     misclosure_e: float
     linear_misclosure: float
@@ -19,16 +21,16 @@ class CompassRuleResult:
 
 
 def compass_rule(
-    coordinates: list[tuple[float, float]],
-    known_end: tuple[float, float] | None = None,
+    coordinates: list[Point],
+    known_end: Point | None = None,
 ) -> CompassRuleResult:
     """Adjust traverse coordinates using the Compass Rule (Bowditch method).
 
     Distributes linear misclosure proportionally by cumulative leg length.
 
     Args:
-        coordinates: List of (northing, easting) tuples. First point is the
-            fixed starting point. Last point is the observed ending point.
+        coordinates: List of Points. First point is the fixed starting point.
+            Last point is the observed ending point.
         known_end: For fixed-endpoint traverses, the known coordinates of the
             ending point. If None, assumes a closed-loop traverse where the
             ending point should coincide with the starting point.
@@ -44,15 +46,15 @@ def compass_rule(
 
     # Compute misclosure
     last = coordinates[-1]
-    misclosure_n = last[0] - target[0]
-    misclosure_e = last[1] - target[1]
+    misclosure_n = last.northing - target.northing
+    misclosure_e = last.easting - target.easting
     linear_misclosure = math.hypot(misclosure_n, misclosure_e)
 
     # Compute leg lengths
     leg_lengths: list[float] = []
     for i in range(1, len(coordinates)):
-        dn = coordinates[i][0] - coordinates[i - 1][0]
-        de = coordinates[i][1] - coordinates[i - 1][1]
+        dn = coordinates[i].northing - coordinates[i - 1].northing
+        de = coordinates[i].easting - coordinates[i - 1].easting
         leg_lengths.append(math.hypot(dn, de))
 
     total_length = sum(leg_lengths)
@@ -64,14 +66,21 @@ def compass_rule(
     )
 
     # Apply corrections proportional to cumulative distance
-    adjusted: list[tuple[float, float]] = [coordinates[0]]
+    adjusted: list[Point] = [coordinates[0]]
     cumulative = 0.0
     for i, leg in enumerate(leg_lengths):
         cumulative += leg
         ratio = cumulative / total_length
-        adj_n = coordinates[i + 1][0] - misclosure_n * ratio
-        adj_e = coordinates[i + 1][1] - misclosure_e * ratio
-        adjusted.append((adj_n, adj_e))
+        orig = coordinates[i + 1]
+        adj_n = orig.northing - misclosure_n * ratio
+        adj_e = orig.easting - misclosure_e * ratio
+        adjusted.append(Point(
+            northing=adj_n,
+            easting=adj_e,
+            elevation=orig.elevation,
+            number=orig.number,
+            description=orig.description,
+        ))
 
     return CompassRuleResult(
         adjusted=adjusted,

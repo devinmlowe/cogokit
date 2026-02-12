@@ -4,11 +4,13 @@ import math
 
 import pytest
 
+from cogopro.core import Point
 from cogopro.solvers.horizontal_curve import (
     CurveElements,
     solve_curve,
     spiral,
     three_point_curve,
+    three_point_curve_from_points,
 )
 
 
@@ -149,3 +151,46 @@ class TestSpiral:
             spiral(-10, 500)
         with pytest.raises(ValueError):
             spiral(100, 0)
+
+
+class TestThreePointCurveFromPoints:
+    """Test three_point_curve_from_points with core.Point objects."""
+
+    def test_known_circle(self):
+        p1 = Point(northing=0.0, easting=5.0)
+        p2 = Point(northing=5.0, easting=0.0)
+        p3 = Point(northing=0.0, easting=-5.0)
+        center, R = three_point_curve_from_points(p1, p2, p3)
+        assert math.isclose(center.easting, 0, abs_tol=1e-9)
+        assert math.isclose(center.northing, 0, abs_tol=1e-9)
+        assert math.isclose(R, 5, rel_tol=1e-9)
+
+    def test_offset_circle(self):
+        pts = [
+            Point(northing=4 + 10 * math.sin(a), easting=3 + 10 * math.cos(a))
+            for a in (0, math.radians(120), math.radians(240))
+        ]
+        center, R = three_point_curve_from_points(pts[0], pts[1], pts[2])
+        assert math.isclose(center.easting, 3, abs_tol=1e-9)
+        assert math.isclose(center.northing, 4, abs_tol=1e-9)
+        assert math.isclose(R, 10, rel_tol=1e-9)
+
+    def test_collinear_raises(self):
+        p1 = Point(northing=0.0, easting=0.0)
+        p2 = Point(northing=1.0, easting=1.0)
+        p3 = Point(northing=2.0, easting=2.0)
+        with pytest.raises(ValueError, match="collinear"):
+            three_point_curve_from_points(p1, p2, p3)
+
+    def test_matches_float_version(self):
+        """Point version should produce same results as float version."""
+        p1 = Point(northing=10.0, easting=20.0)
+        p2 = Point(northing=30.0, easting=0.0)
+        p3 = Point(northing=10.0, easting=-20.0)
+
+        cx_f, cy_f, R_f = three_point_curve(20, 10, 0, 30, -20, 10)
+        center, R = three_point_curve_from_points(p1, p2, p3)
+
+        assert math.isclose(center.easting, cx_f, abs_tol=1e-9)
+        assert math.isclose(center.northing, cy_f, abs_tol=1e-9)
+        assert math.isclose(R, R_f, rel_tol=1e-9)
