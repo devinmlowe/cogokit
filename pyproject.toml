@@ -16,6 +16,9 @@ cogopro = "cogopro.cli:app"
 dev = ["pytest", "ruff"]
 lsa = ["numpy>=1.24"]
 
+[tool.setuptools.package-data]
+cogopro = ["data/*.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
