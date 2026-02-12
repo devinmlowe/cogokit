@@ -756,3 +756,105 @@ def omerc_inverse(
     convergence = math.atan2(v, u) if abs(u) > 1e-15 else 0.0
 
     return TMInverseResult(lat, lon, convergence, scale)
+
+
+# ---- Unified Projection Dispatch ----
+
+def projection_forward(lat: float, lon: float, proj_def) -> TMResult:
+    """Forward projection using parameters from a ProjectionDef.
+
+    Routes to the correct projection function based on proj_def.proj_type.
+
+    Parameters:
+        lat: Geodetic latitude in radians.
+        lon: Geodetic longitude in radians.
+        proj_def: A ProjectionDef with projection parameters.
+
+    Returns:
+        TMResult with easting, northing, convergence, and scale factor.
+    """
+    if proj_def.proj_type == "tmerc":
+        return tm_forward(
+            lat, lon,
+            lon0=proj_def.lon_0,
+            k0=proj_def.k_0,
+            false_easting=proj_def.x_0,
+            false_northing=proj_def.y_0,
+            ellipsoid=proj_def.ellipsoid,
+        )
+    elif proj_def.proj_type == "lcc":
+        return lcc_forward(
+            lat, lon,
+            lat_0=proj_def.lat_0,
+            lon_0=proj_def.lon_0,
+            lat_1=proj_def.lat_1,
+            lat_2=proj_def.lat_2,
+            false_easting=proj_def.x_0,
+            false_northing=proj_def.y_0,
+            ellipsoid=proj_def.ellipsoid,
+        )
+    elif proj_def.proj_type == "omerc":
+        return omerc_forward(
+            lat, lon,
+            lat_0=proj_def.lat_0,
+            lonc=proj_def.lonc,
+            alpha=proj_def.alpha,
+            gamma=proj_def.gamma,
+            k_0=proj_def.k_0,
+            false_easting=proj_def.x_0,
+            false_northing=proj_def.y_0,
+            no_uoff=proj_def.no_uoff,
+            ellipsoid=proj_def.ellipsoid,
+        )
+    else:
+        raise ValueError(f"Unsupported projection type: {proj_def.proj_type!r}")
+
+
+def projection_inverse(easting: float, northing: float, proj_def) -> TMInverseResult:
+    """Inverse projection using parameters from a ProjectionDef.
+
+    Routes to the correct inverse projection function based on proj_def.proj_type.
+
+    Parameters:
+        easting: Grid easting in metres.
+        northing: Grid northing in metres.
+        proj_def: A ProjectionDef with projection parameters.
+
+    Returns:
+        TMInverseResult with lat, lon (radians), convergence, and scale.
+    """
+    if proj_def.proj_type == "tmerc":
+        return tm_inverse(
+            easting, northing,
+            lon0=proj_def.lon_0,
+            k0=proj_def.k_0,
+            false_easting=proj_def.x_0,
+            false_northing=proj_def.y_0,
+            ellipsoid=proj_def.ellipsoid,
+        )
+    elif proj_def.proj_type == "lcc":
+        return lcc_inverse(
+            easting, northing,
+            lat_0=proj_def.lat_0,
+            lon_0=proj_def.lon_0,
+            lat_1=proj_def.lat_1,
+            lat_2=proj_def.lat_2,
+            false_easting=proj_def.x_0,
+            false_northing=proj_def.y_0,
+            ellipsoid=proj_def.ellipsoid,
+        )
+    elif proj_def.proj_type == "omerc":
+        return omerc_inverse(
+            easting, northing,
+            lat_0=proj_def.lat_0,
+            lonc=proj_def.lonc,
+            alpha=proj_def.alpha,
+            gamma=proj_def.gamma,
+            k_0=proj_def.k_0,
+            false_easting=proj_def.x_0,
+            false_northing=proj_def.y_0,
+            no_uoff=proj_def.no_uoff,
+            ellipsoid=proj_def.ellipsoid,
+        )
+    else:
+        raise ValueError(f"Unsupported projection type: {proj_def.proj_type!r}")
