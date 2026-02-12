@@ -536,3 +536,223 @@ def lcc_inverse(
     scale = rho_prime * n / (a * m_lat) if m_lat > 1e-15 else 1.0
 
     return TMInverseResult(lat, lon, convergence, scale)
+
+
+# ---- Hotine Oblique Mercator (variant B) ----
+
+
+def _omerc_params(lat_0, lonc, alpha, k_0, ellipsoid):
+    """Compute shared OMerc projection constants (Snyder pp. 70-75)."""
+    a = ellipsoid.a
+    e2 = ellipsoid.e2
+    e = math.sqrt(e2)
+
+    sin_lat0 = math.sin(lat_0)
+    cos_lat0 = math.cos(lat_0)
+
+    B = math.sqrt(1.0 + e2 * cos_lat0**4 / (1.0 - e2))
+    A = a * B * k_0 * math.sqrt(1.0 - e2) / (1.0 - e2 * sin_lat0**2)
+
+    t0 = _lcc_t(lat_0, e)
+    D = B * math.sqrt(1.0 - e2) / (cos_lat0 * math.sqrt(1.0 - e2 * sin_lat0**2))
+    D_sq = max(D * D, 1.0)
+    F_val = D + math.copysign(math.sqrt(D_sq - 1.0), lat_0)
+    H = F_val * t0**B
+    G = (F_val - 1.0 / F_val) / 2.0
+
+    sin_gamma0 = math.sin(alpha) / D
+    cos_gamma0 = math.sqrt(max(0.0, 1.0 - sin_gamma0**2))
+    gamma_0 = math.atan2(sin_gamma0, cos_gamma0)
+
+    if abs(cos_gamma0) > 1e-15:
+        lon_0 = lonc - math.asin(G * math.tan(gamma_0)) / B
+    else:
+        lon_0 = lonc
+
+    # u_c: evaluate u at (lat_0, lonc) using the forward equations
+    Q_c = H / t0**B  # = F_val
+    S_c = (Q_c - 1.0 / Q_c) / 2.0
+    V_c = math.sin(B * (lonc - lon_0))
+    cos_Blon_c = math.cos(B * (lonc - lon_0))
+    if abs(cos_Blon_c) < 1e-15:
+        u_c = (A / B) * B * (lonc - lon_0)
+    else:
+        u_c = (A / B) * math.atan2(S_c * cos_gamma0 + V_c * sin_gamma0, cos_Blon_c)
+
+    return A, B, H, sin_gamma0, cos_gamma0, lon_0, u_c, e, e2
+
+
+def omerc_forward(
+    lat: float,
+    lon: float,
+    lat_0: float,
+    lonc: float,
+    alpha: float,
+    gamma: float,
+    k_0: float = 1.0,
+    false_easting: float = 0.0,
+    false_northing: float = 0.0,
+    no_uoff: bool = True,
+    ellipsoid: Ellipsoid = WGS84,
+) -> TMResult:
+    """Hotine Oblique Mercator (variant B) forward projection.
+
+    Parameters:
+        lat: Geodetic latitude in radians.
+        lon: Geodetic longitude in radians.
+        lat_0: Latitude of projection centre in radians.
+        lonc: Longitude of projection centre in radians.
+        alpha: Azimuth of initial line in radians.
+        gamma: Rectified grid angle in radians.
+        k_0: Scale factor at projection centre.
+        false_easting: False easting in metres.
+        false_northing: False northing in metres.
+        no_uoff: If True, centre the projection (no U offset).
+        ellipsoid: Reference ellipsoid.
+
+    Returns:
+        TMResult with easting, northing, convergence, and scale factor.
+    """
+    a = ellipsoid.a
+    A, B, H, sin_g0, cos_g0, lon_0, u_c, e, e2 = _omerc_params(
+        lat_0, lonc, alpha, k_0, ellipsoid
+    )
+
+    # Forward projection
+    sin_lat = math.sin(lat)
+    t = _lcc_t(lat, e)
+    Q = H / t**B
+    S = (Q - 1.0 / Q) / 2.0
+    T = (Q + 1.0 / Q) / 2.0
+    V = math.sin(B * (lon - lon_0))
+    U_val = (-V * cos_g0 + S * sin_g0) / T
+
+    # Clamp to avoid domain error
+    U_val = max(-1.0 + 1e-15, min(1.0 - 1e-15, U_val))
+
+    v = A * math.log((1.0 - U_val) / (1.0 + U_val)) / (2.0 * B)
+    cos_Blon = math.cos(B * (lon - lon_0))
+    if abs(cos_Blon) < 1e-15:
+        u = A * B * (lon - lon_0)
+    else:
+        u = (A / B) * math.atan2(S * cos_g0 + V * sin_g0, cos_Blon)
+
+    if no_uoff:
+        u = u - u_c
+
+    # Rotate to grid
+    sin_g = math.sin(gamma)
+    cos_g = math.cos(gamma)
+    E = v * cos_g + u * sin_g + false_easting
+    N = u * cos_g - v * sin_g + false_northing
+
+    # Scale factor
+    cos_lat = math.cos(lat)
+    m_lat = cos_lat / math.sqrt(1.0 - e2 * sin_lat**2) if abs(cos_lat) > 1e-15 else 1e-15
+    scale = A / (a * m_lat) * math.sqrt(1.0 - U_val**2) if abs(1.0 - U_val**2) > 1e-30 else k_0
+
+    # Convergence (approximate)
+    convergence = math.atan2(v, u) if abs(u) > 1e-15 else 0.0
+
+    return TMResult(E, N, convergence, scale)
+
+
+def omerc_inverse(
+    easting: float,
+    northing: float,
+    lat_0: float,
+    lonc: float,
+    alpha: float,
+    gamma: float,
+    k_0: float = 1.0,
+    false_easting: float = 0.0,
+    false_northing: float = 0.0,
+    no_uoff: bool = True,
+    ellipsoid: Ellipsoid = WGS84,
+) -> TMInverseResult:
+    """Hotine Oblique Mercator (variant B) inverse projection.
+
+    Parameters:
+        easting: Grid easting in metres.
+        northing: Grid northing in metres.
+        lat_0: Latitude of projection centre in radians.
+        lonc: Longitude of projection centre in radians.
+        alpha: Azimuth of initial line in radians.
+        gamma: Rectified grid angle in radians.
+        k_0: Scale factor at projection centre.
+        false_easting: False easting in metres.
+        false_northing: False northing in metres.
+        no_uoff: If True, centre the projection (no U offset).
+        ellipsoid: Reference ellipsoid.
+
+    Returns:
+        TMInverseResult with lat, lon (radians), convergence, and scale.
+    """
+    a = ellipsoid.a
+    A, B, H, sin_g0, cos_g0, lon_0, u_c, e, e2 = _omerc_params(
+        lat_0, lonc, alpha, k_0, ellipsoid
+    )
+
+    # De-rotate from grid
+    sin_g = math.sin(gamma)
+    cos_g = math.cos(gamma)
+    dx = easting - false_easting
+    dy = northing - false_northing
+    v = dx * cos_g - dy * sin_g
+    u = dy * cos_g + dx * sin_g
+
+    if no_uoff:
+        u = u + u_c
+
+    Q = math.exp(-B * v / A)
+    S = (Q - 1.0 / Q) / 2.0
+    T = (Q + 1.0 / Q) / 2.0
+    sin_Bu_A = math.sin(B * u / A)
+    cos_Bu_A = math.cos(B * u / A)
+
+    U_val = (cos_Bu_A * cos_g0 * sin_g0 - sin_Bu_A * cos_g0 * cos_g0
+             + S * sin_g0 * sin_g0 + sin_Bu_A * cos_g0) / T
+    # Simplify: U = (-cos_Bu_A * cos_g0 + S * sin_g0) ... wait, let me get this right.
+    # From Snyder inverse: first compute S', T' from Q = exp(-Bv/A)
+    # Then: sin(phi') = (T' sin_g0 - S' cos_g0) / ... no.
+    # Actually, inverse formula for latitude uses:
+    # U = (S * sin_g0 + sin_Bu_A * cos_g0) / T  -- WRONG sign compared to forward
+    # Wait. The inverse formula computes phi from (u, v).
+    # t' = (H / sqrt((1+U)/(1-U)))^(1/B)
+    # where U is derived differently in inverse.
+
+    # Correct inverse per Snyder eq. 9-24 and 9-25:
+    # S' = (Q - 1/Q) / 2,  T' = (Q + 1/Q) / 2  where Q = e^(-Bv/A)
+    # V' = sin(Bu/A)
+    # U' = (V' cos_g0 + S' sin_g0) / T'   -- note sign difference from forward
+    U_val = (sin_Bu_A * cos_g0 + S * sin_g0) / T
+    # Clamp
+    U_val = max(-1.0 + 1e-15, min(1.0 - 1e-15, U_val))
+
+    t = (H / math.sqrt((1.0 + U_val) / (1.0 - U_val))) ** (1.0 / B)
+
+    # Iterative latitude from t
+    lat = math.pi / 2.0 - 2.0 * math.atan(t)
+    for _ in range(15):
+        sin_lat = math.sin(lat)
+        lat_new = math.pi / 2.0 - 2.0 * math.atan(
+            t * ((1.0 - e * sin_lat) / (1.0 + e * sin_lat)) ** (e / 2.0)
+        )
+        if abs(lat_new - lat) < 1e-15:
+            lat = lat_new
+            break
+        lat = lat_new
+
+    # Snyder eq. 9-26: note the MINUS sign
+    lon = lon_0 - math.atan2(
+        S * cos_g0 - sin_Bu_A * sin_g0, cos_Bu_A
+    ) / B
+
+    # Scale and convergence (approximate)
+    sin_lat = math.sin(lat)
+    cos_lat = math.cos(lat)
+    m_lat = cos_lat / math.sqrt(1.0 - e2 * sin_lat**2) if abs(cos_lat) > 1e-15 else 1e-15
+    scale = A / (a * m_lat) * math.sqrt(1.0 - U_val**2) if abs(1.0 - U_val**2) > 1e-30 else k_0
+    convergence = math.atan2(v, u) if abs(u) > 1e-15 else 0.0
+
+    return TMInverseResult(lat, lon, convergence, scale)
