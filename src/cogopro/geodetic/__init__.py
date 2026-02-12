@@ -25,6 +25,12 @@ from cogopro.geodetic.projections import (
     TMResult,
     UTMResult,
     geodetic_to_utm,
+    lcc_forward,
+    lcc_inverse,
+    omerc_forward,
+    omerc_inverse,
+    projection_forward,
+    projection_inverse,
     tm_forward,
     tm_inverse,
     utm_from_point,
@@ -32,6 +38,13 @@ from cogopro.geodetic.projections import (
     utm_to_point,
     utm_zone,
     utm_central_meridian,
+)
+from cogopro.geodetic.proj4 import ProjectionDef, parse_proj4
+from cogopro.geodetic.state_plane import (
+    StatePlaneZone,
+    get_zone,
+    find_zone,
+    list_zones,
 )
 from cogopro.geodetic.conversions import (
     GeodeticCoordinate,
