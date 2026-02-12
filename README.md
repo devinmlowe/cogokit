@@ -1,17 +1,122 @@
-# COGOpro-python
+# COGOpro Python
 
-A Python reimplementation of **COGO+ Pro v4.20** by Simple Geospatial Solutions (sgss.ca).
+A Python reimplementation of **COGO+ Pro v4.20**, a coordinate geometry and surveying application originally written for the HP 50g/49g+ calculators by [Simple Geospatial Solutions](https://sgss.ca).
 
-COGO+ Pro is a comprehensive coordinate geometry (COGO) and surveying application originally written for the HP 50g/49g+ graphing calculators. This project reverse-engineers the HP calculator program and refactors it into a clean, modular Python library.
+This project reverse-engineers the HP RPL calculator programs (libraries L930-L936) into a clean, modular Python package with comprehensive test coverage. The original calculator source files are preserved in the `original/` directory for reference.
 
-## Original Application
+## Features
 
-The `original/` directory contains the unmodified HP calculator program files from the [COGOpro.zip](https://sgss.ca/files/COGOpro.zip) distribution. The `.HP` files are compiled HP RPL programs (libraries L930-L936) containing binary and embedded string data.
+**332 tests** covering all computational modules. Zero external dependencies beyond the Python standard library.
+
+### Core (`cogopro.core`)
+
+- **Point** - Survey point with northing/easting/elevation, distance and azimuth calculations
+- **Angle** - DMS, decimal degrees, radians, HP notation, and surveyor bearing conversions with full arithmetic
+- **Job** - Point collection container with add/get/remove/iterate operations
+- **Units** - Linear (feet, meters, chains, links, rods) and angular (DMS, decimal degrees, radians, grads) unit conversions
+
+### Coordinate Geometry (`cogopro.cogo`)
+
+- **Inverse** - Azimuth, horizontal/slope/vertical distance, and grade between two points
+- **Traverse** - Forward traverse and sideshot from a point along a bearing
+- **Intersections** - Bearing-bearing, bearing-distance, and distance-distance intersections
+- **Area** - Polygon area (shoelace formula) and perimeter
+
+### Adjustments (`cogopro.adjustments`)
+
+- **Compass Rule** - Bowditch traverse adjustment for closed and fixed-endpoint traverses
+- **Helmert Transform** - 2D similarity transformation (least-squares) with translation, rotation, and scale
+- **Transforms** - Rotate, mirror, shift, scale, and average point sets
+
+### Geometric Solvers (`cogopro.solvers`)
+
+- **Triangle** - All solution cases: SSS, SAS, ASA, AAS, ambiguous SSA
+- **Horizontal Curve** - Circular curve solver (any 2 elements), 3-point curve, clothoid spirals
+- **Vertical Curve** - Parabolic vertical curve solver with high/low point detection
+
+### Geodetic (`cogopro.geodetic`)
+
+- **Ellipsoids** - 9 reference ellipsoids (WGS84, GRS80, Clarke 1866, etc.) with derived parameters
+- **Vincenty** - Direct and inverse geodesic solutions on the ellipsoid
+- **Projections** - Transverse Mercator and UTM forward/inverse projections
+- **Conversions** - Grid-to-geodetic coordinate conversion, combined scale factor, ground/grid distance
+
+### Surveying (`cogopro.surveying`)
+
+- **Levelling** - Differential level run reduction, loop closure adjustment
+- **Traverse Plus** - Total station field observation reduction (HI/HT, slope-to-horizontal), station processing, Tienstra 3-point resection
+- **Alignment** - Horizontal alignment (tangents + circular curves), vertical profile with grade breaks and vertical curves, combined 3D alignment with station/offset
+- **Stakeout** - Point and alignment stakeout calculations, batch staking, slope staking with cut/fill
+- **Cross Sections** - Cross-section templates, cut/fill area computation, average end area and prismoidal volumes, earthwork summaries, mass haul ordinates
+
+### I/O (`cogopro.io`)
+
+- **ASCII I/O** - Read/write delimited point files (space, tab, comma) with auto-detection
+- **Formats** - DXF and KML point export (basic stubs)
+
+## Installation
+
+```bash
+git clone git@github.com:devinmlowe/cogopro-python.git
+cd cogopro-python
+pip install -e ".[dev]"
+```
+
+Requires Python 3.11+. No external dependencies for the library itself; only `pytest` and `ruff` for development.
+
+## Usage
+
+```python
+from cogopro.core import Point, Angle, Job
+from cogopro.cogo.inverse import inverse
+from cogopro.cogo.traverse import traverse
+from cogopro.io import read_points, write_points, Delimiter
+
+# Create points
+p1 = Point(northing=1000.0, easting=2000.0, elevation=100.0, number=1, description="BM1")
+p2 = Point(northing=1500.0, easting=2500.0, elevation=105.0, number=2, description="BM2")
+
+# Inverse calculation
+result = inverse(p1, p2)
+print(f"Azimuth: {Angle.from_azimuth(result.azimuth).to_bearing_string()}")
+print(f"Distance: {result.horizontal_distance:.3f}")
+
+# Forward traverse
+p3 = traverse(p1, azimuth=result.azimuth, distance=100.0, elevation=102.0)
+
+# Read/write point files
+job = read_points("points.txt")
+write_points(job, "output.csv", delimiter=Delimiter.COMMA)
+```
+
+## Running Tests
+
+```bash
+pytest           # Run all 332 tests
+pytest -v        # Verbose output
+pytest tests/test_alignment.py  # Single module
+```
+
+## Project Structure
+
+```
+cogopro-python/
+  src/cogopro/
+    core/           # Point, Angle, Job, Units
+    cogo/           # Inverse, traverse, intersections, area
+    adjustments/    # Compass rule, Helmert, transforms
+    solvers/        # Triangle, horizontal curve, vertical curve
+    geodetic/       # Ellipsoids, Vincenty, projections, conversions
+    surveying/      # Levelling, traverse+, alignment, stakeout, cross-sections
+    io/             # ASCII I/O, DXF/KML export
+  tests/            # 332 tests across 22 test files
+  original/         # Original HP calculator source files (L930-L936)
+```
 
 ### HP Library Mapping
 
-| Library | File | Primary Domain |
-|---------|------|----------------|
+| Library | File | Domain |
+|---------|------|--------|
 | L930 | `PROGRAM/L930.HP` | Main menu, point management, settings, basic COGO |
 | L931 | `PROGRAM/L931.HP` | Curves, compass rule, traverse, geodetic calcs |
 | L932 | `PROGRAM/L932.HP` | Figures/areas, transformations, Helmert, traverse stakeout |
@@ -20,75 +125,35 @@ The `original/` directory contains the unmodified HP calculator program files fr
 | L935 | `PROGRAM/L935.HP` | Levelling |
 | L936 | `PROGRAM/L936.HP` | Utilities/support |
 
-### Sample Data
+## Next Steps
 
-The `original/ASCII/` directory contains sample point files demonstrating the data format:
-```
-PointNum Northing Easting Elevation Description
-```
+### High Priority
 
-## Feature Set (Target)
+- **CLI interface** - Add a command-line tool (via `click` or `argparse`) for running common operations from the terminal: inverse, traverse, area, curve solving, coordinate conversions. Support batch processing of point files and piped input/output.
+- **Coordinate system awareness** - Currently all computations use raw coordinates. Add a CRS layer so jobs track their datum and projection, enabling automatic transformations between systems (e.g., State Plane to UTM, NAD83 to WGS84).
+- **DXF/KML export completion** - The current `io/formats.py` contains basic stubs. Flesh out DXF export with line/polyline entities, text labels, and layer organization. Fix KML export to transform local coordinates to WGS84 lat/lon via the geodetic module.
 
-### Core COGO
-- **Point Traverse** - direction/distance point creation, sideshot mode
-- **Inverse** - direction, distance, coordinate differences between points
-- **Intersections** - bearing-bearing, bearing-distance, distance-distance (with offsets)
-- **Area** - polygon area calculation
+### Medium Priority
 
-### Adjustments
-- **Compass Rule** - closed-loop and fixed-point traverse adjustment
-- **Transformations** - rotate, mirror, shift (N/E/Z), scale, average coordinates
-- **Helmert Transformation** - 2D/3D least-squares coordinate transformation
+- **LandXML and CSV import/export** - Add LandXML support (industry standard for survey data exchange) and flexible CSV with configurable column mappings (point number, N, E, Z, description in any order).
+- **Traverse workflow** - Build a high-level traverse workflow that chains raw field observations through reduction, adjustment (compass rule or least squares), and coordinate computation in a single pipeline with angular closure check.
+- **Least-squares network adjustment** - Implement general-purpose least-squares adjustment for control survey networks with redundant observations, beyond the current Helmert and compass rule methods.
+- **Spiral alignment elements** - The alignment module supports tangents and circular curves. Add spiral (clothoid) transitions using the existing `solvers.horizontal_curve.spiral()` function.
 
-### Surveying
-- **Traverse Plus** - total station data processing (slope/hz distances, angles, heights)
-- **Resection** - position from observations to known points
-- **Stakeout** - alignment and point stakeout
-- **Levelling** - differential levelling with circuit adjustments
-- **Alignments** - 3D alignments with straights, curves, spirals, vertical curves, cross-sections
-- **Cut/Fill** - earthwork calculations
+### Lower Priority
 
-### Solvers
-- **Triangle Solver** - spherical and planar triangle solutions
-- **Horizontal Curve** - including 3-point curves and spirals
-- **Vertical Curve** - parabolic vertical curve solutions
+- **Interactive TUI** - Build a terminal UI (via `textual` or `curses`) mirroring the original COGO+ Pro menu system for interactive field use.
+- **Report generation** - Generate formatted traverse reports, adjustment reports, and stakeout sheets as PDF or HTML.
+- **Point database backend** - Replace the in-memory `Job` dict with an optional SQLite backend for large projects with thousands of points.
+- **3D slope staking** - Extend cross-sections and earthwork to handle iterative catch-point computation on irregular ground surfaces.
+- **Edge-case test hardening** - Additional testing for antipodal Vincenty, near-zero curves, degenerate triangles, and boundary conditions.
 
-### Geodetic
-- **Coordinate Conversions** - grid to geodetic and vice versa
-- **Projections** - UTM, US State Plane, Canadian, Australian, and custom projections
-- **Vincenty** - direct and inverse geodesic solutions
-- **Ellipsoids** - WGS84, NAD83, and user-defined ellipsoids
+## Origin
 
-### I/O
-- **Point Management** - store, review, delete, renumber, browse
-- **Import/Export** - CSV/delimited ASCII files
-- **DXF Export** - CAD integration
-- **KML Export** - Google Earth visualization
-- **Job Management** - project/job file handling
+COGO+ Pro v4.20 was developed by Simple Geospatial Solutions (sgss.ca) as a comprehensive coordinate geometry suite for HP 50g and 49g+ graphing calculators. The original software was distributed as compiled HP RPL libraries (L930-L936) covering COGO, adjustments, curves, triangles, geodetics, and surveying operations.
 
-## Python Project Structure
-
-```
-src/cogopro/
-    core/           # Points, angles, coordinate systems, units
-    cogo/           # Traverse, inverse, intersections, area
-    adjustments/    # Compass rule, Helmert, transformations
-    surveying/      # Traverse+, levelling, alignments, stakeout
-    geodetic/       # Projections, conversions, Vincenty, ellipsoids
-    solvers/        # Triangle, horizontal curve, vertical curve
-    io/             # File I/O (ASCII, DXF, KML, job files)
-tests/              # Unit tests
-original/           # Original HP calculator program files
-```
-
-## Development Approach
-
-1. **Reverse engineer** the HP RPL programs by extracting readable strings, identifying function names, and mapping computational logic
-2. **Implement core primitives** first (points, angles, coordinate systems)
-3. **Build outward** from COGO fundamentals to advanced features
-4. **Validate** against the sample data files and known surveying formulas
-5. **Test thoroughly** with unit tests for each computational module
+This Python port preserves the mathematical algorithms while modernizing the architecture into a testable, extensible package.
 
 ## License
 
-The original COGO+ Pro is free software by Simple Geospatial Solutions. This Python reimplementation is for educational and professional use.
+Private repository. All rights reserved.
