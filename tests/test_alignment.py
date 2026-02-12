@@ -507,6 +507,128 @@ class TestStandaloneSpiralTransition:
 # Station / offset through spiral
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Asymmetric SCS: different entry/exit spiral lengths
+# ---------------------------------------------------------------------------
+
+class TestAsymmetricSCS:
+    """SCS with different entry and exit spiral lengths."""
+
+    def test_asymmetric_junction_continuity(self):
+        R = 500.0
+        Ls1 = 80.0   # shorter entry spiral
+        Ls2 = 120.0   # longer exit spiral
+        delta_c = math.radians(15)
+
+        t1 = Tangent(
+            start_station=0.0, length=200.0, azimuth=0.0,
+            start_point=Point(northing=0.0, easting=0.0),
+        )
+        sp_entry = Spiral(
+            start_station=200.0, length=Ls1, radius=R,
+            direction="R", start_azimuth=0.0,
+            start_point=t1.point_at(200.0), entry=True,
+        )
+        sp_end = sp_entry.point_at(sp_entry.end_station)
+        curve_az = sp_entry.azimuth_at(sp_entry.end_station)
+        center = Point(
+            northing=sp_end.northing + R * (-math.sin(curve_az)),
+            easting=sp_end.easting + R * math.cos(curve_az),
+        )
+        curve = CircularCurve(
+            start_station=sp_entry.end_station, length=R * delta_c,
+            radius=R, delta=delta_c, direction="R",
+            pc_point=sp_end, center_point=center, start_azimuth=curve_az,
+        )
+        curve_end = curve.point_at(curve.end_station)
+        curve_end_az = curve_az + delta_c
+        sp_exit = Spiral(
+            start_station=curve.end_station, length=Ls2, radius=R,
+            direction="R", start_azimuth=curve_end_az,
+            start_point=curve_end, entry=False,
+        )
+
+        # Tangent → entry spiral
+        pt1 = t1.point_at(200.0)
+        pt2 = sp_entry.point_at(200.0)
+        assert math.isclose(pt1.northing, pt2.northing, abs_tol=TOL)
+        assert math.isclose(pt1.easting, pt2.easting, abs_tol=TOL)
+
+        # Entry spiral → curve
+        pt3 = sp_entry.point_at(sp_entry.end_station)
+        pt4 = curve.point_at(curve.start_station)
+        assert math.isclose(pt3.northing, pt4.northing, abs_tol=TOL)
+        assert math.isclose(pt3.easting, pt4.easting, abs_tol=TOL)
+
+        # Curve → exit spiral
+        pt5 = curve.point_at(curve.end_station)
+        pt6 = sp_exit.point_at(sp_exit.start_station)
+        assert math.isclose(pt5.northing, pt6.northing, abs_tol=TOL)
+        assert math.isclose(pt5.easting, pt6.easting, abs_tol=TOL)
+
+
+# ---------------------------------------------------------------------------
+# Reverse spiral: direction change at inflection
+# ---------------------------------------------------------------------------
+
+class TestReverseSpiralDirection:
+    """Exit spiral (R) → Entry spiral (L) with continuity at inflection."""
+
+    def test_reverse_spiral_continuity(self):
+        R = 500.0
+        Ls = 100.0
+        sp_exit_r = Spiral(
+            start_station=0.0, length=Ls, radius=R,
+            direction="R", start_azimuth=0.0,
+            start_point=Point(northing=0.0, easting=0.0), entry=False,
+        )
+        exit_end = sp_exit_r.point_at(sp_exit_r.end_station)
+        exit_end_az = sp_exit_r.azimuth_at(sp_exit_r.end_station)
+
+        sp_entry_l = Spiral(
+            start_station=sp_exit_r.end_station, length=Ls, radius=R,
+            direction="L", start_azimuth=exit_end_az,
+            start_point=exit_end, entry=True,
+        )
+
+        # Continuity at inflection point
+        pt1 = sp_exit_r.point_at(sp_exit_r.end_station)
+        pt2 = sp_entry_l.point_at(sp_entry_l.start_station)
+        assert math.isclose(pt1.northing, pt2.northing, abs_tol=TOL)
+        assert math.isclose(pt1.easting, pt2.easting, abs_tol=TOL)
+
+    def test_reverse_spiral_deflects_opposite(self):
+        """Left spiral after right should offset to the left."""
+        R = 500.0
+        Ls = 100.0
+        sp_exit_r = Spiral(
+            start_station=0.0, length=Ls, radius=R,
+            direction="R", start_azimuth=0.0,
+            start_point=Point(northing=0.0, easting=0.0), entry=False,
+        )
+        exit_end = sp_exit_r.point_at(sp_exit_r.end_station)
+        exit_end_az = sp_exit_r.azimuth_at(sp_exit_r.end_station)
+
+        sp_entry_l = Spiral(
+            start_station=sp_exit_r.end_station, length=Ls, radius=R,
+            direction="L", start_azimuth=exit_end_az,
+            start_point=exit_end, entry=True,
+        )
+
+        # End of right spiral was offsetting east; left spiral should offset west
+        l_end = sp_entry_l.point_at(sp_entry_l.end_station)
+        tangent_end = Point(
+            northing=exit_end.northing + Ls * math.cos(exit_end_az),
+            easting=exit_end.easting + Ls * math.sin(exit_end_az),
+        )
+        # Left curve should deflect to the left (lower easting than straight)
+        assert l_end.easting < tangent_end.easting
+
+
+# ---------------------------------------------------------------------------
+# Station / offset through spiral
+# ---------------------------------------------------------------------------
+
 class TestSpiralStationOffset:
     """Project a point onto a spiral element."""
 

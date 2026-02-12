@@ -116,12 +116,6 @@ class Spiral(AlignmentElement):
 
     def point_at(self, station: float) -> Point:
         d = station - self.start_station
-        if d <= 0:
-            return Point(
-                northing=self.start_point.northing,
-                easting=self.start_point.easting,
-            )
-
         x_local, y_local = self._local_coords(d)
         sign = 1.0 if self.direction == "R" else -1.0
         y_right = sign * y_local
@@ -168,28 +162,16 @@ class Spiral(AlignmentElement):
         return x, y
 
     def _exit_coords(self, d: float) -> tuple[float, float]:
-        """Numerical integration (Simpson's rule) for exit spiral (1/R -> 0)."""
-        n_steps = 100  # even number for Simpson's rule
-        h = d / n_steps
-        R = self.radius
-        Ls = self.length
-
-        x = 0.0
-        y = 0.0
-        for i in range(n_steps + 1):
-            t = i * h
-            theta = t / R - t * t / (2.0 * R * Ls)
-            if i == 0 or i == n_steps:
-                w = 1
-            elif i % 2 == 1:
-                w = 4
-            else:
-                w = 2
-            x += w * math.cos(theta)
-            y += w * math.sin(theta)
-
-        x *= h / 3
-        y *= h / 3
+        """Analytical exit spiral coords via entry spiral integral substitution."""
+        theta_s = self.length / (2.0 * self.radius)
+        x_s, y_s = self._entry_coords(self.length)
+        x_r, y_r = self._entry_coords(self.length - d)
+        dx = x_s - x_r
+        dy = y_s - y_r
+        cos_ts = math.cos(theta_s)
+        sin_ts = math.sin(theta_s)
+        x = cos_ts * dx + sin_ts * dy
+        y = sin_ts * dx - cos_ts * dy
         return x, y
 
 
@@ -295,27 +277,37 @@ class HorizontalAlignment:
     def _project_spiral(
         elem: Spiral, point: Point
     ) -> tuple[float, float]:
-        """Project onto spiral using ternary search for closest point."""
-        lo = elem.start_station
-        hi = elem.end_station
-        for _ in range(80):  # converge well below mm
-            m1 = lo + (hi - lo) / 3
-            m2 = hi - (hi - lo) / 3
-            p1 = elem.point_at(m1)
-            p2 = elem.point_at(m2)
-            d1 = math.hypot(point.northing - p1.northing, point.easting - p1.easting)
-            d2 = math.hypot(point.northing - p2.northing, point.easting - p2.easting)
-            if d1 < d2:
-                hi = m2
-            else:
-                lo = m1
-        sta = (lo + hi) / 2
-        az = elem.azimuth_at(sta)
-        pt_on = elem.point_at(sta)
-        dn = point.northing - pt_on.northing
-        de = point.easting - pt_on.easting
+        """Project onto spiral via coarse search + Newton refinement."""
+        best_s = elem.start_station
+        best_d = float("inf")
+        for i in range(9):
+            s = elem.start_station + elem.length * i / 8
+            pt = elem.point_at(s)
+            d = math.hypot(
+                point.northing - pt.northing, point.easting - pt.easting,
+            )
+            if d < best_d:
+                best_d = d
+                best_s = s
+
+        s = best_s
+        for _ in range(20):
+            pt = elem.point_at(s)
+            az = elem.azimuth_at(s)
+            dn = point.northing - pt.northing
+            de = point.easting - pt.easting
+            along = dn * math.cos(az) + de * math.sin(az)
+            s += along
+            s = max(elem.start_station, min(elem.end_station, s))
+            if abs(along) < 1e-10:
+                break
+
+        pt = elem.point_at(s)
+        az = elem.azimuth_at(s)
+        dn = point.northing - pt.northing
+        de = point.easting - pt.easting
         offset = -dn * math.sin(az) + de * math.cos(az)
-        return sta, offset
+        return s, offset
 
     @staticmethod
     def _signed_offset(elem: AlignmentElement, point: Point) -> float:
