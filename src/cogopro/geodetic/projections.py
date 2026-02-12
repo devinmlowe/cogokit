@@ -391,3 +391,148 @@ def utm_to_point(
         number=number,
         description=description,
     )
+
+
+# ---- Lambert Conformal Conic (2SP) ----
+
+def _lcc_t(lat: float, e: float) -> float:
+    """Compute the LCC t parameter for a given latitude."""
+    sin_lat = math.sin(lat)
+    return math.tan(math.pi / 4.0 - lat / 2.0) * (
+        (1.0 + e * sin_lat) / (1.0 - e * sin_lat)
+    ) ** (e / 2.0)
+
+
+def _lcc_m(lat: float, e2: float) -> float:
+    """Compute the LCC m parameter for a given latitude."""
+    sin_lat = math.sin(lat)
+    return math.cos(lat) / math.sqrt(1.0 - e2 * sin_lat * sin_lat)
+
+
+def lcc_forward(
+    lat: float,
+    lon: float,
+    lat_0: float,
+    lon_0: float,
+    lat_1: float,
+    lat_2: float,
+    false_easting: float = 0.0,
+    false_northing: float = 0.0,
+    ellipsoid: Ellipsoid = WGS84,
+) -> TMResult:
+    """Lambert Conformal Conic (2SP) forward projection.
+
+    Parameters:
+        lat: Geodetic latitude in radians.
+        lon: Geodetic longitude in radians.
+        lat_0: Latitude of false origin in radians.
+        lon_0: Longitude of false origin (central meridian) in radians.
+        lat_1: First standard parallel in radians.
+        lat_2: Second standard parallel in radians.
+        false_easting: False easting in metres.
+        false_northing: False northing in metres.
+        ellipsoid: Reference ellipsoid.
+
+    Returns:
+        TMResult with easting, northing, convergence, and scale factor.
+    """
+    e2 = ellipsoid.e2
+    e = math.sqrt(e2)
+    a = ellipsoid.a
+
+    m1 = _lcc_m(lat_1, e2)
+    m2 = _lcc_m(lat_2, e2)
+    t0 = _lcc_t(lat_0, e)
+    t1 = _lcc_t(lat_1, e)
+    t2 = _lcc_t(lat_2, e)
+
+    n = (math.log(m1) - math.log(m2)) / (math.log(t1) - math.log(t2))
+    F = m1 / (n * t1**n)
+    rho_0 = a * F * t0**n
+
+    t = _lcc_t(lat, e)
+    rho = a * F * t**n
+    theta = n * (lon - lon_0)
+
+    easting = false_easting + rho * math.sin(theta)
+    northing = false_northing + rho_0 - rho * math.cos(theta)
+
+    # Grid convergence
+    convergence = theta
+
+    # Scale factor
+    m_lat = _lcc_m(lat, e2)
+    scale = rho * n / (a * m_lat) if m_lat > 1e-15 else 1.0
+
+    return TMResult(easting, northing, convergence, scale)
+
+
+def lcc_inverse(
+    easting: float,
+    northing: float,
+    lat_0: float,
+    lon_0: float,
+    lat_1: float,
+    lat_2: float,
+    false_easting: float = 0.0,
+    false_northing: float = 0.0,
+    ellipsoid: Ellipsoid = WGS84,
+) -> TMInverseResult:
+    """Lambert Conformal Conic (2SP) inverse projection.
+
+    Parameters:
+        easting: Grid easting in metres.
+        northing: Grid northing in metres.
+        lat_0: Latitude of false origin in radians.
+        lon_0: Longitude of false origin (central meridian) in radians.
+        lat_1: First standard parallel in radians.
+        lat_2: Second standard parallel in radians.
+        false_easting: False easting in metres.
+        false_northing: False northing in metres.
+        ellipsoid: Reference ellipsoid.
+
+    Returns:
+        TMInverseResult with lat, lon (radians), convergence, and scale.
+    """
+    e2 = ellipsoid.e2
+    e = math.sqrt(e2)
+    a = ellipsoid.a
+
+    m1 = _lcc_m(lat_1, e2)
+    m2 = _lcc_m(lat_2, e2)
+    t0 = _lcc_t(lat_0, e)
+    t1 = _lcc_t(lat_1, e)
+    t2 = _lcc_t(lat_2, e)
+
+    n = (math.log(m1) - math.log(m2)) / (math.log(t1) - math.log(t2))
+    F = m1 / (n * t1**n)
+    rho_0 = a * F * t0**n
+
+    dx = easting - false_easting
+    dy = rho_0 - (northing - false_northing)
+
+    sign_n = 1.0 if n >= 0 else -1.0
+    rho_prime = sign_n * math.sqrt(dx * dx + dy * dy)
+    t_prime = (rho_prime / (a * F)) ** (1.0 / n)
+    theta_prime = math.atan2(sign_n * dx, sign_n * dy)
+
+    lon = theta_prime / n + lon_0
+
+    # Iterative latitude from t_prime
+    lat = math.pi / 2.0 - 2.0 * math.atan(t_prime)
+    for _ in range(15):
+        sin_lat = math.sin(lat)
+        lat_new = math.pi / 2.0 - 2.0 * math.atan(
+            t_prime * ((1.0 - e * sin_lat) / (1.0 + e * sin_lat)) ** (e / 2.0)
+        )
+        if abs(lat_new - lat) < 1e-15:
+            lat = lat_new
+            break
+        lat = lat_new
+
+    # Convergence and scale
+    convergence = theta_prime
+    m_lat = _lcc_m(lat, e2)
+    scale = rho_prime * n / (a * m_lat) if m_lat > 1e-15 else 1.0
+
+    return TMInverseResult(lat, lon, convergence, scale)
