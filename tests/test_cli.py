@@ -172,6 +172,58 @@ class TestExport:
 # --- top-level ---
 
 
+class TestZonesCommand:
+    """Test the zones listing command."""
+
+    def test_list_all(self):
+        result = runner.invoke(app, ["zones"])
+        assert result.exit_code == 0
+        assert "California" in result.output or "CA" in result.output
+
+    def test_list_by_state(self):
+        result = runner.invoke(app, ["zones", "--state", "TX"])
+        assert result.exit_code == 0
+        assert "TX" in result.output
+
+    def test_show_epsg(self):
+        result = runner.invoke(app, ["zones", "--epsg", "26945"])
+        assert result.exit_code == 0
+        assert "California" in result.output
+
+    def test_unknown_epsg(self):
+        result = runner.invoke(app, ["zones", "--epsg", "99999"])
+        assert result.exit_code == 1
+
+
+class TestConvertStatePlane:
+    """Test coordinate conversion with State Plane CRS."""
+
+    def test_convert_geodetic_to_state_plane(self, tmp_path):
+        pts_file = tmp_path / "points.txt"
+        lat = math.radians(34.05)
+        lon = math.radians(-118.24)
+        pts_file.write_text(f"1 {lat:.10f} {lon:.10f} 0.0\n")
+
+        result = runner.invoke(app, [
+            "convert", str(pts_file),
+            "--from-crs", "geodetic:nad83",
+            "--to-crs", "epsg:26945",
+        ])
+        assert result.exit_code == 0
+
+    def test_parse_crs_epsg(self):
+        from cogopro.cli import _parse_crs
+        crs = _parse_crs("epsg:26945")
+        assert crs is not None
+        assert crs.kind == "projected"
+
+    def test_parse_crs_sp_state_zone(self):
+        from cogopro.cli import _parse_crs
+        crs = _parse_crs("sp:CA:5")
+        assert crs is not None
+        assert crs.kind == "projected"
+
+
 class TestTopLevel:
     def test_help(self):
         result = runner.invoke(app, ["--help"])

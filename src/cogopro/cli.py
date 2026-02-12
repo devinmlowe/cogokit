@@ -128,6 +128,37 @@ def curve(
     typer.echo(f"Degree:    {c.D:.4f}")
 
 
+@app.command()
+def zones(
+    state: Optional[str] = typer.Option(None, help="Filter by state abbreviation (e.g. TX)"),
+    epsg: Optional[int] = typer.Option(None, help="Show details for a specific EPSG code"),
+) -> None:
+    """List available State Plane coordinate system zones."""
+    from cogopro.geodetic.state_plane import get_zone, list_zones
+
+    if epsg is not None:
+        try:
+            zone = get_zone(epsg)
+        except ValueError as exc:
+            typer.echo(f"Error: {exc}", err=True)
+            raise typer.Exit(code=1)
+        typer.echo(f"EPSG:  {zone.epsg}")
+        typer.echo(f"Name:  {zone.name}")
+        typer.echo(f"State: {zone.state}")
+        typer.echo(f"Zone:  {zone.zone}")
+        typer.echo(f"Type:  {zone.proj_def.proj_type}")
+        typer.echo(f"Units: {zone.proj_def.units}")
+        return
+
+    zone_list = list_zones(state=state)
+    if not zone_list:
+        typer.echo("No zones found.")
+        return
+
+    for z in zone_list:
+        typer.echo(f"  EPSG:{z.epsg:<6}  {z.state}  {z.zone:<20}  {z.proj_def.proj_type}")
+
+
 def _parse_crs(crs_str: str):
     """Parse a CRS string like 'utm:17:N:wgs84' or 'geodetic:wgs84'.
 
@@ -158,6 +189,26 @@ def _parse_crs(crs_str: str):
         hemisphere = parts[2].upper()
         ellipsoid = ellipsoid_map.get(parts[3], WGS84) if len(parts) > 3 else WGS84
         return CRS.utm(zone, hemisphere, ellipsoid=ellipsoid)
+    elif kind == "epsg":
+        try:
+            return CRS.state_plane(int(parts[1]))
+        except (ValueError, IndexError):
+            return None
+    elif kind == "sp":
+        try:
+            from cogopro.geodetic.state_plane import find_zone
+            state_code = parts[1].upper()
+            zone_name = parts[2] if len(parts) > 2 else ""
+            zone = find_zone(state_code, zone_name)
+            return CRS.state_plane(zone.epsg)
+        except (ValueError, IndexError):
+            return None
+    elif kind == "proj4":
+        try:
+            proj4_str = crs_str[len("proj4:"):].strip().strip('"').strip("'")
+            return CRS.from_proj4(proj4_str)
+        except (ValueError, IndexError):
+            return None
     return None
 
 
