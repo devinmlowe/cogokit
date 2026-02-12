@@ -93,6 +93,106 @@ class CircularCurve(AlignmentElement):
         return Point(northing=n, easting=e)
 
 
+@dataclass
+class Spiral(AlignmentElement):
+    """Clothoid spiral transition element.
+
+    Attributes:
+        radius: Radius at the circular-curve end of the spiral.
+        direction: ``'L'`` for left, ``'R'`` for right.
+        start_azimuth: Forward azimuth at the start of the spiral in radians.
+        start_point: Coordinate at the start of the spiral.
+        entry: True if curvature increases (tangent-to-curve),
+            False if curvature decreases (curve-to-tangent).
+    """
+
+    radius: float = 0.0
+    direction: str = "R"
+    start_azimuth: float = 0.0
+    start_point: Point = field(
+        default_factory=lambda: Point(northing=0.0, easting=0.0)
+    )
+    entry: bool = True
+
+    def point_at(self, station: float) -> Point:
+        d = station - self.start_station
+        if d <= 0:
+            return Point(
+                northing=self.start_point.northing,
+                easting=self.start_point.easting,
+            )
+
+        x_local, y_local = self._local_coords(d)
+        sign = 1.0 if self.direction == "R" else -1.0
+        y_right = sign * y_local
+
+        az = self.start_azimuth
+        n = self.start_point.northing + x_local * math.cos(az) - y_right * math.sin(az)
+        e = self.start_point.easting + x_local * math.sin(az) + y_right * math.cos(az)
+        return Point(northing=n, easting=e)
+
+    @property
+    def end_azimuth(self) -> float:
+        """Azimuth at the end of the spiral."""
+        sign = 1.0 if self.direction == "R" else -1.0
+        theta_s = self.length / (2.0 * self.radius)
+        return self.start_azimuth + sign * theta_s
+
+    def azimuth_at(self, station: float) -> float:
+        """Azimuth at a given station along the spiral."""
+        d = station - self.start_station
+        sign = 1.0 if self.direction == "R" else -1.0
+        if self.entry:
+            theta = d * d / (2.0 * self.radius * self.length)
+        else:
+            theta = d / self.radius - d * d / (2.0 * self.radius * self.length)
+        return self.start_azimuth + sign * theta
+
+    def _local_coords(self, d: float) -> tuple[float, float]:
+        """Local (along-tangent, perpendicular) coords at distance *d*."""
+        if self.entry:
+            return self._entry_coords(d)
+        return self._exit_coords(d)
+
+    def _entry_coords(self, d: float) -> tuple[float, float]:
+        """Series expansion for entry spiral (curvature 0 -> 1/R)."""
+        theta = d * d / (2.0 * self.radius * self.length)
+        t2 = theta * theta
+        x = d * (1 - t2 / 10 + t2 * t2 / 216 - t2 * t2 * t2 / 9360)
+        y = d * (
+            theta / 3
+            - t2 * theta / 42
+            + t2 * t2 * theta / 1320
+            - t2 * t2 * t2 * theta / 75600
+        )
+        return x, y
+
+    def _exit_coords(self, d: float) -> tuple[float, float]:
+        """Numerical integration (Simpson's rule) for exit spiral (1/R -> 0)."""
+        n_steps = 100  # even number for Simpson's rule
+        h = d / n_steps
+        R = self.radius
+        Ls = self.length
+
+        x = 0.0
+        y = 0.0
+        for i in range(n_steps + 1):
+            t = i * h
+            theta = t / R - t * t / (2.0 * R * Ls)
+            if i == 0 or i == n_steps:
+                w = 1
+            elif i % 2 == 1:
+                w = 4
+            else:
+                w = 2
+            x += w * math.cos(theta)
+            y += w * math.sin(theta)
+
+        x *= h / 3
+        y *= h / 3
+        return x, y
+
+
 # ---------------------------------------------------------------------------
 # Horizontal alignment
 # ---------------------------------------------------------------------------
@@ -147,6 +247,8 @@ class HorizontalAlignment:
             return HorizontalAlignment._project_tangent(elem, point)
         if isinstance(elem, CircularCurve):
             return HorizontalAlignment._project_curve(elem, point)
+        if isinstance(elem, Spiral):
+            return HorizontalAlignment._project_spiral(elem, point)
         raise TypeError(f"Unknown element type: {type(elem)}")
 
     @staticmethod
@@ -190,6 +292,32 @@ class HorizontalAlignment:
         return (station, offset)
 
     @staticmethod
+    def _project_spiral(
+        elem: Spiral, point: Point
+    ) -> tuple[float, float]:
+        """Project onto spiral using ternary search for closest point."""
+        lo = elem.start_station
+        hi = elem.end_station
+        for _ in range(80):  # converge well below mm
+            m1 = lo + (hi - lo) / 3
+            m2 = hi - (hi - lo) / 3
+            p1 = elem.point_at(m1)
+            p2 = elem.point_at(m2)
+            d1 = math.hypot(point.northing - p1.northing, point.easting - p1.easting)
+            d2 = math.hypot(point.northing - p2.northing, point.easting - p2.easting)
+            if d1 < d2:
+                hi = m2
+            else:
+                lo = m1
+        sta = (lo + hi) / 2
+        az = elem.azimuth_at(sta)
+        pt_on = elem.point_at(sta)
+        dn = point.northing - pt_on.northing
+        de = point.easting - pt_on.easting
+        offset = -dn * math.sin(az) + de * math.cos(az)
+        return sta, offset
+
+    @staticmethod
     def _signed_offset(elem: AlignmentElement, point: Point) -> float:
         if isinstance(elem, Tangent):
             dn = point.northing - elem.start_point.northing
@@ -203,6 +331,9 @@ class HorizontalAlignment:
             if elem.direction == "R":
                 return elem.radius - dist_from_center
             return dist_from_center - elem.radius
+        if isinstance(elem, Spiral):
+            sta, offset = HorizontalAlignment._project_spiral(elem, point)
+            return offset
         raise TypeError(f"Unknown element type: {type(elem)}")
 
 

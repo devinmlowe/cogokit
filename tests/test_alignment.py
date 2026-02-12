@@ -10,6 +10,7 @@ from cogopro.surveying.alignment import (
     CircularCurve,
     GradeBreak,
     HorizontalAlignment,
+    Spiral,
     Tangent,
     VerticalProfile,
 )
@@ -255,3 +256,291 @@ class TestCombinedAlignment:
         assert math.isclose(sta, 250.0, abs_tol=TOL)
         assert math.isclose(off, 10.0, abs_tol=TOL)
         assert math.isclose(design_z, 105.0, abs_tol=TOL)
+
+
+# ---------------------------------------------------------------------------
+# Spiral element: entry (tangent → curve)
+# ---------------------------------------------------------------------------
+
+class TestEntrySpiralElement:
+    """Point computation for a right entry spiral heading north."""
+
+    @pytest.fixture()
+    def sp(self):
+        return Spiral(
+            start_station=0.0,
+            length=200.0,
+            radius=500.0,
+            direction="R",
+            start_azimuth=0.0,
+            start_point=Point(northing=1000.0, easting=5000.0),
+            entry=True,
+        )
+
+    def test_start(self, sp):
+        pt = sp.point_at(0.0)
+        assert math.isclose(pt.northing, 1000.0, abs_tol=TOL)
+        assert math.isclose(pt.easting, 5000.0, abs_tol=TOL)
+
+    def test_end_matches_solver(self, sp):
+        """End coordinates should match the standalone spiral() solver."""
+        from cogopro.solvers.horizontal_curve import spiral as spiral_params
+
+        params = spiral_params(200.0, 500.0)
+        pt = sp.point_at(200.0)
+        # az=0 (north), direction R: N = start_N + X, E = start_E + Y
+        assert math.isclose(pt.northing, 1000.0 + params.X, abs_tol=0.001)
+        assert math.isclose(pt.easting, 5000.0 + params.Y, abs_tol=0.001)
+
+    def test_midpoint_between_start_and_end(self, sp):
+        """Midpoint should be between start and end coordinates."""
+        pt_mid = sp.point_at(100.0)
+        pt_end = sp.point_at(200.0)
+        assert 1000.0 < pt_mid.northing < pt_end.northing
+        assert 5000.0 < pt_mid.easting < pt_end.easting
+
+    def test_end_azimuth(self, sp):
+        theta_s = 200.0 / (2.0 * 500.0)  # = 0.2 rad
+        assert math.isclose(sp.end_azimuth, 0.2, abs_tol=TOL)
+
+
+class TestEntrySpiralLeft:
+    """Left entry spiral should deflect to the left (negative easting offset)."""
+
+    def test_left_deflection(self):
+        sp = Spiral(
+            start_station=0.0,
+            length=200.0,
+            radius=500.0,
+            direction="L",
+            start_azimuth=0.0,
+            start_point=Point(northing=1000.0, easting=5000.0),
+            entry=True,
+        )
+        pt = sp.point_at(200.0)
+        # Left spiral heading north deflects west (easting decreases)
+        assert pt.easting < 5000.0
+        assert pt.northing > 1000.0
+
+
+# ---------------------------------------------------------------------------
+# Spiral element: exit (curve → tangent)
+# ---------------------------------------------------------------------------
+
+class TestExitSpiralElement:
+    """Exit spiral should produce same total deflection as entry."""
+
+    def test_exit_total_deflection(self):
+        """Total displacement should be same magnitude as entry spiral."""
+        entry = Spiral(
+            start_station=0.0, length=200.0, radius=500.0,
+            direction="R", start_azimuth=0.0,
+            start_point=Point(northing=0.0, easting=0.0), entry=True,
+        )
+        exit_sp = Spiral(
+            start_station=0.0, length=200.0, radius=500.0,
+            direction="R", start_azimuth=0.0,
+            start_point=Point(northing=0.0, easting=0.0), entry=False,
+        )
+        pt_entry = entry.point_at(200.0)
+        pt_exit = exit_sp.point_at(200.0)
+        # Same arc length, same total deflection angle theta_s
+        dist_entry = math.hypot(pt_entry.northing, pt_entry.easting)
+        dist_exit = math.hypot(pt_exit.northing, pt_exit.easting)
+        assert math.isclose(dist_entry, dist_exit, rel_tol=0.01)
+
+    def test_exit_azimuth_change(self):
+        """Exit spiral should deflect by theta_s."""
+        sp = Spiral(
+            start_station=0.0, length=200.0, radius=500.0,
+            direction="R", start_azimuth=0.5,
+            start_point=Point(northing=0.0, easting=0.0), entry=False,
+        )
+        theta_s = 200.0 / (2.0 * 500.0)
+        assert math.isclose(sp.end_azimuth, 0.5 + theta_s, abs_tol=TOL)
+
+
+# ---------------------------------------------------------------------------
+# SCS transition: Tangent → Spiral → Curve → Spiral → Tangent (continuity)
+# ---------------------------------------------------------------------------
+
+class TestSCSContinuity:
+    """Verify coordinate continuity at all junctions of a symmetric SCS."""
+
+    @pytest.fixture()
+    def elements(self):
+        R = 500.0
+        Ls = 200.0
+        theta_s = Ls / (2.0 * R)  # 0.2 rad
+        delta_curve = math.radians(30.0)  # circular curve central angle
+
+        # Tangent 1: north from (1000, 5000), length 300
+        t1 = Tangent(
+            start_station=0.0, length=300.0, azimuth=0.0,
+            start_point=Point(northing=1000.0, easting=5000.0),
+        )
+
+        # Entry spiral: starts at tangent 1 end
+        ts_start = t1.point_at(t1.end_station)
+        entry_sp = Spiral(
+            start_station=300.0, length=Ls, radius=R,
+            direction="R", start_azimuth=0.0,
+            start_point=ts_start, entry=True,
+        )
+
+        # Circular curve: starts at entry spiral end
+        pc = entry_sp.point_at(entry_sp.end_station)
+        az_at_pc = entry_sp.end_azimuth
+        # Center is R to the right of PC along perpendicular
+        center_n = pc.northing - R * math.sin(az_at_pc)
+        center_e = pc.easting + R * math.cos(az_at_pc)
+        # Wait, for right curve: center is to the right
+        # Right of azimuth az: perpendicular direction = az + pi/2
+        # actually, the center of a right curve is to the RIGHT of the direction of travel
+        # Right direction relative to az: (-sin(az), cos(az)) in (N, E)
+        center_n = pc.northing + R * (-math.sin(az_at_pc))
+        center_e = pc.easting + R * math.cos(az_at_pc)
+        # Hmm let me be more careful. For azimuth az:
+        # Forward: (cos(az), sin(az)) in (N, E)
+        # Right: (-sin(az), cos(az)) in (N, E)
+        # Wait that's not right either. Let me think:
+        # azimuth 0 = north. Right of north = east.
+        # Forward (N, E) = (1, 0). Right should be (0, 1).
+        # (-sin(0), cos(0)) = (0, 1) ✓
+        # azimuth pi/2 = east. Right of east = south.
+        # (-sin(pi/2), cos(pi/2)) = (-1, 0) ✓
+        # So right-perpendicular = (-sin(az), cos(az)) is correct.
+        center = Point(
+            northing=pc.northing + R * (-math.sin(az_at_pc)),
+            easting=pc.easting + R * math.cos(az_at_pc),
+        )
+        curve = CircularCurve(
+            start_station=entry_sp.end_station, length=R * delta_curve,
+            radius=R, delta=delta_curve, direction="R",
+            pc_point=pc, center_point=center, start_azimuth=az_at_pc,
+        )
+
+        # Exit spiral: starts at curve end
+        pt_sta = curve.end_station
+        sc_start = curve.point_at(pt_sta)
+        az_at_sc = az_at_pc + delta_curve  # right curve adds delta
+        exit_sp = Spiral(
+            start_station=pt_sta, length=Ls, radius=R,
+            direction="R", start_azimuth=az_at_sc,
+            start_point=sc_start, entry=False,
+        )
+
+        # Tangent 2: starts at exit spiral end
+        st_start = exit_sp.point_at(exit_sp.end_station)
+        az_t2 = az_at_sc + theta_s  # exit spiral adds theta_s
+        t2 = Tangent(
+            start_station=exit_sp.end_station, length=300.0,
+            azimuth=az_t2, start_point=st_start,
+        )
+
+        return [t1, entry_sp, curve, exit_sp, t2]
+
+    def test_tangent_to_entry_spiral(self, elements):
+        t1, entry_sp = elements[0], elements[1]
+        pt_a = t1.point_at(t1.end_station)
+        pt_b = entry_sp.point_at(entry_sp.start_station)
+        assert math.isclose(pt_a.northing, pt_b.northing, abs_tol=0.01)
+        assert math.isclose(pt_a.easting, pt_b.easting, abs_tol=0.01)
+
+    def test_entry_spiral_to_curve(self, elements):
+        entry_sp, curve = elements[1], elements[2]
+        pt_a = entry_sp.point_at(entry_sp.end_station)
+        pt_b = curve.point_at(curve.start_station)
+        assert math.isclose(pt_a.northing, pt_b.northing, abs_tol=0.01)
+        assert math.isclose(pt_a.easting, pt_b.easting, abs_tol=0.01)
+
+    def test_curve_to_exit_spiral(self, elements):
+        curve, exit_sp = elements[2], elements[3]
+        pt_a = curve.point_at(curve.end_station)
+        pt_b = exit_sp.point_at(exit_sp.start_station)
+        assert math.isclose(pt_a.northing, pt_b.northing, abs_tol=0.01)
+        assert math.isclose(pt_a.easting, pt_b.easting, abs_tol=0.01)
+
+    def test_exit_spiral_to_tangent(self, elements):
+        exit_sp, t2 = elements[3], elements[4]
+        pt_a = exit_sp.point_at(exit_sp.end_station)
+        pt_b = t2.point_at(t2.start_station)
+        assert math.isclose(pt_a.northing, pt_b.northing, abs_tol=0.01)
+        assert math.isclose(pt_a.easting, pt_b.easting, abs_tol=0.01)
+
+    def test_alignment_traversal(self, elements):
+        """Full alignment should be traversable without errors."""
+        ha = HorizontalAlignment(elements)
+        start = ha.station_to_point(0.0)
+        end = ha.station_to_point(ha.elements[-1].end_station)
+        assert start.northing < end.northing  # progressed northward
+
+
+# ---------------------------------------------------------------------------
+# Standalone spiral: Tangent → Spiral → Tangent
+# ---------------------------------------------------------------------------
+
+class TestStandaloneSpiralTransition:
+    """A single spiral between two tangents."""
+
+    def test_continuity(self):
+        sp = Spiral(
+            start_station=200.0, length=150.0, radius=400.0,
+            direction="R", start_azimuth=0.0,
+            start_point=Point(northing=1200.0, easting=5000.0),
+            entry=True,
+        )
+        end_pt = sp.point_at(sp.end_station)
+        end_az = sp.end_azimuth
+
+        t2 = Tangent(
+            start_station=sp.end_station, length=200.0,
+            azimuth=end_az, start_point=end_pt,
+        )
+        pt_a = sp.point_at(sp.end_station)
+        pt_b = t2.point_at(t2.start_station)
+        assert math.isclose(pt_a.northing, pt_b.northing, abs_tol=0.001)
+        assert math.isclose(pt_a.easting, pt_b.easting, abs_tol=0.001)
+
+
+# ---------------------------------------------------------------------------
+# Station / offset through spiral
+# ---------------------------------------------------------------------------
+
+class TestSpiralStationOffset:
+    """Project a point onto a spiral element."""
+
+    def test_point_on_spiral(self):
+        sp = Spiral(
+            start_station=0.0, length=200.0, radius=500.0,
+            direction="R", start_azimuth=0.0,
+            start_point=Point(northing=1000.0, easting=5000.0),
+            entry=True,
+        )
+        ha = HorizontalAlignment([sp])
+        # Get a point on the spiral at station 100
+        pt_on = sp.point_at(100.0)
+        sta, off = ha.point_to_station_offset(pt_on)
+        assert math.isclose(sta, 100.0, abs_tol=0.1)
+        assert math.isclose(off, 0.0, abs_tol=0.1)
+
+    def test_point_offset_from_spiral(self):
+        sp = Spiral(
+            start_station=0.0, length=200.0, radius=500.0,
+            direction="R", start_azimuth=0.0,
+            start_point=Point(northing=1000.0, easting=5000.0),
+            entry=True,
+        )
+        ha = HorizontalAlignment([sp])
+        # Point slightly to the right of the spiral midpoint
+        pt_on = sp.point_at(100.0)
+        # Azimuth at station 100
+        az = sp.azimuth_at(100.0)
+        # Offset 10 units to the right: (-sin(az), cos(az))
+        offset_pt = Point(
+            northing=pt_on.northing + 10.0 * (-math.sin(az)),
+            easting=pt_on.easting + 10.0 * math.cos(az),
+        )
+        sta, off = ha.point_to_station_offset(offset_pt)
+        assert math.isclose(sta, 100.0, abs_tol=0.5)
+        assert math.isclose(off, 10.0, abs_tol=0.5)

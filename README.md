@@ -6,7 +6,7 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 
 ## Features
 
-**421 tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI).
+**519 tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI). Optional: [NumPy](https://numpy.org/) for least-squares network adjustment.
 
 ### Core (`cogopro.core`)
 
@@ -27,6 +27,7 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 
 - **Compass Rule** - Bowditch traverse adjustment for closed and fixed-endpoint traverses
 - **Helmert Transform** - 2D similarity transformation (least-squares) with translation, rotation, and scale
+- **Least Squares** - General-purpose network adjustment with distance, angle, direction, and azimuth observations (requires NumPy: `pip install cogopro[lsa]`)
 - **Transforms** - Rotate, mirror, shift, scale, and average point sets
 
 ### Geometric Solvers (`cogopro.solvers`)
@@ -46,13 +47,16 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 
 - **Levelling** - Differential level run reduction, loop closure adjustment
 - **Traverse Plus** - Total station field observation reduction (HI/HT, slope-to-horizontal), station processing, Tienstra 3-point resection
-- **Alignment** - Horizontal alignment (tangents + circular curves), vertical profile with grade breaks and vertical curves, combined 3D alignment with station/offset
+- **Alignment** - Horizontal alignment (tangents, circular curves, clothoid spirals), vertical profile with grade breaks and vertical curves, combined 3D alignment with station/offset
+- **Traverse Workflow** - End-to-end traverse pipeline: observation reduction, angular closure, coordinate computation, compass rule adjustment with precision analysis
 - **Stakeout** - Point and alignment stakeout calculations, batch staking, slope staking with cut/fill
 - **Cross Sections** - Cross-section templates, cut/fill area computation, average end area and prismoidal volumes, earthwork summaries, mass haul ordinates
 
 ### I/O (`cogopro.io`)
 
 - **ASCII I/O** - Read/write delimited point files (space, tab, comma) with auto-detection
+- **CSV** - Flexible CSV import/export with configurable column mappings and header auto-detection
+- **LandXML** - Import points from LandXML 1.2; export points, parcels, and alignments
 - **DXF Export** - Point, text label, line, and polyline entities with layer organization
 - **KML Export** - Point export with automatic CRS-to-WGS84 coordinate transformation
 
@@ -64,7 +68,7 @@ cd cogopro-python
 pip install -e ".[dev]"
 ```
 
-Requires Python 3.11+. Runtime dependency: `typer` (for CLI). Development: `pytest` and `ruff`.
+Requires Python 3.11+. Runtime dependency: `typer` (for CLI). Development: `pytest` and `ruff`. Optional: `pip install cogopro[lsa]` for least-squares network adjustment (NumPy).
 
 ## Usage
 
@@ -113,6 +117,9 @@ cogopro convert points.txt --from-crs utm:17:N --to-crs geodetic:wgs84
 
 # Export to DXF or KML
 cogopro export points.txt --format dxf --output site.dxf
+
+# Run a full traverse workflow from observations
+cogopro traverse-run observations.csv --start-point "1 1000.0 5000.0 100.0" --start-azimuth 45.0
 ```
 
 Run `cogopro --help` or `cogopro <command> --help` for full option details.
@@ -120,7 +127,7 @@ Run `cogopro --help` or `cogopro <command> --help` for full option details.
 ## Running Tests
 
 ```bash
-pytest           # Run all 421 tests
+pytest           # Run all 519 tests
 pytest -v        # Verbose output
 pytest tests/test_alignment.py  # Single module
 ```
@@ -133,12 +140,12 @@ cogopro-python/
     cli.py          # Typer CLI
     core/           # Point, Angle, Job, CRS, Units
     cogo/           # Inverse, traverse, intersections, area
-    adjustments/    # Compass rule, Helmert, transforms
+    adjustments/    # Compass rule, Helmert, least-squares, transforms
     solvers/        # Triangle, horizontal curve, vertical curve
     geodetic/       # Ellipsoids, Vincenty, projections, conversions
-    surveying/      # Levelling, traverse+, alignment, stakeout, cross-sections
-    io/             # ASCII I/O, DXF/KML export
-  tests/            # 421 tests across 25 test files
+    surveying/      # Levelling, traverse+, alignment, stakeout, cross-sections, workflow
+    io/             # ASCII/CSV I/O, LandXML, DXF/KML export
+  tests/            # 519 tests across 29 test files
   original/         # Original HP calculator source files (L930-L936)
 ```
 
@@ -158,21 +165,19 @@ cogopro-python/
 
 ### High Priority
 
-- **LandXML and CSV import/export** - Add LandXML support (industry standard for survey data exchange) and flexible CSV with configurable column mappings (point number, N, E, Z, description in any order).
-- **Traverse workflow** - Build a high-level traverse workflow that chains raw field observations through reduction, adjustment (compass rule or least squares), and coordinate computation in a single pipeline with angular closure check.
-- **Least-squares network adjustment** - Implement general-purpose least-squares adjustment for control survey networks with redundant observations, beyond the current Helmert and compass rule methods.
-- **Spiral alignment elements** - The alignment module supports tangents and circular curves. Add spiral (clothoid) transitions using the existing `solvers.horizontal_curve.spiral()` function.
+- **State Plane CRS support** - Extend the CRS layer beyond geodetic/UTM to support State Plane coordinate systems with zone definitions and custom TM parameters.
+- **GPS baseline observations** - Add 3D GPS baseline vectors to the least-squares network adjustment module (requires different weight model).
+- **Interactive TUI** - Build a terminal UI (via `textual` or `curses`) mirroring the original COGO+ Pro menu system for interactive field use.
 
 ### Medium Priority
 
-- **State Plane CRS support** - Extend the CRS layer beyond geodetic/UTM to support State Plane coordinate systems with zone definitions and custom TM parameters.
-- **Interactive TUI** - Build a terminal UI (via `textual` or `curses`) mirroring the original COGO+ Pro menu system for interactive field use.
 - **Report generation** - Generate formatted traverse reports, adjustment reports, and stakeout sheets as PDF or HTML.
 - **Point database backend** - Replace the in-memory `Job` dict with an optional SQLite backend for large projects with thousands of points.
+- **3D slope staking** - Extend cross-sections and earthwork to handle iterative catch-point computation on irregular ground surfaces.
 
 ### Lower Priority
 
-- **3D slope staking** - Extend cross-sections and earthwork to handle iterative catch-point computation on irregular ground surfaces.
+- **LandXML complex import** - Import alignments and parcels from LandXML (currently export-only for these; point import is complete).
 - **Edge-case test hardening** - Additional testing for antipodal Vincenty, near-zero curves, degenerate triangles, and boundary conditions.
 
 ## Origin
