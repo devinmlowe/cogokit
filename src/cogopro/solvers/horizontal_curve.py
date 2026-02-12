@@ -12,6 +12,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from cogopro.core import Point
+
 
 # Arc-definition constant: 100 * (180/pi) = 5729.57795130823
 _D_CONST = 5729.57795130823
@@ -244,3 +246,26 @@ def spiral(Ls: float, R: float) -> SpiralElements:
     k = X - R * math.sin(theta_s)
 
     return SpiralElements(Ls=Ls, R=R, theta_s=theta_s, X=X, Y=Y, p=p, k=k)
+
+
+def three_point_curve_from_points(
+    p1: Point, p2: Point, p3: Point,
+) -> tuple[Point, float]:
+    """Compute circumscribed circle from three core.Point objects.
+
+    Parameters:
+        p1, p2, p3: Points (using easting as x, northing as y).
+
+    Returns:
+        (center_point, radius) where center_point is a core.Point at the
+        circumcenter and radius is the circumradius.
+
+    Raises:
+        ValueError: If points are collinear.
+    """
+    cx, cy, R = three_point_curve(
+        p1.easting, p1.northing,
+        p2.easting, p2.northing,
+        p3.easting, p3.northing,
+    )
+    return Point(northing=cy, easting=cx), R

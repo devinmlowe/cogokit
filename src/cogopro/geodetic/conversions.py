@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from cogopro.core import Point
 from cogopro.geodetic.ellipsoid import Ellipsoid, WGS84
 from cogopro.geodetic.projections import (
     TMInverseResult,
@@ -27,6 +28,30 @@ class GridCoordinate:
     hemisphere: str = "N"
     convergence: float = 0.0
     scale: float = 1.0
+
+    def to_point(self, number: int | None = None, description: str = "") -> Point:
+        """Convert to a core.Point (northing, easting)."""
+        return Point(
+            northing=self.northing,
+            easting=self.easting,
+            number=number,
+            description=description,
+        )
+
+    @classmethod
+    def from_point(
+        cls,
+        point: Point,
+        zone: int | None = None,
+        hemisphere: str = "N",
+    ) -> GridCoordinate:
+        """Create a GridCoordinate from a core.Point."""
+        return cls(
+            easting=point.easting,
+            northing=point.northing,
+            zone=zone,
+            hemisphere=hemisphere,
+        )
 
 
 @dataclass

@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from cogopro.core import Point
+
 
 @dataclass
 class HelmertResult:
@@ -56,8 +58,8 @@ def _solve_linear_system(matrix: list[list[float]], rhs: list[float]) -> list[fl
 
 
 def helmert_2d(
-    source: list[tuple[float, float]],
-    target: list[tuple[float, float]],
+    source: list[Point],
+    target: list[Point],
 ) -> HelmertResult:
     """Compute 2D Helmert (similarity) transformation parameters.
 
@@ -70,8 +72,8 @@ def helmert_2d(
     where a = scale*cos(rotation), b = scale*sin(rotation).
 
     Args:
-        source: (northing, easting) tuples in the source system.
-        target: (northing, easting) tuples in the target system.
+        source: Points in the source system.
+        target: Points in the target system.
 
     Returns:
         HelmertResult with transformation parameters, residuals, and RMSE.
@@ -88,8 +90,8 @@ def helmert_2d(
     atl = [0.0] * 4
 
     for i in range(n):
-        ns, es = source[i]
-        nt, et = target[i]
+        ns, es = source[i].northing, source[i].easting
+        nt, et = target[i].northing, target[i].easting
 
         # Two observation rows per point
         rows = [(ns, -es, 1.0, 0.0, nt), (es, ns, 0.0, 1.0, et)]
@@ -110,8 +112,8 @@ def helmert_2d(
     residuals: list[tuple[float, float]] = []
     sum_sq = 0.0
     for i in range(n):
-        ns, es = source[i]
-        nt, et = target[i]
+        ns, es = source[i].northing, source[i].easting
+        nt, et = target[i].northing, target[i].easting
         comp_n = a * ns - b * es + tx
         comp_e = b * ns + a * es + ty
         dn = nt - comp_n
@@ -130,20 +132,26 @@ def helmert_2d(
 
 def apply_helmert(
     result: HelmertResult,
-    points: list[tuple[float, float]],
-) -> list[tuple[float, float]]:
+    points: list[Point],
+) -> list[Point]:
     """Apply a computed Helmert transformation to points.
 
     Args:
         result: HelmertResult from helmert_2d().
-        points: (northing, easting) tuples to transform.
+        points: Points to transform.
 
     Returns:
-        Transformed (northing, easting) tuples.
+        Transformed Points (preserving number and description).
     """
-    out: list[tuple[float, float]] = []
-    for n, e in points:
-        new_n = result.a * n - result.b * e + result.tx
-        new_e = result.b * n + result.a * e + result.ty
-        out.append((new_n, new_e))
+    out: list[Point] = []
+    for pt in points:
+        new_n = result.a * pt.northing - result.b * pt.easting + result.tx
+        new_e = result.b * pt.northing + result.a * pt.easting + result.ty
+        out.append(Point(
+            northing=new_n,
+            easting=new_e,
+            elevation=pt.elevation,
+            number=pt.number,
+            description=pt.description,
+        ))
     return out

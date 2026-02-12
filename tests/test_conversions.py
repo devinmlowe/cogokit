@@ -2,6 +2,7 @@
 
 import math
 
+from cogopro.core import Point
 from cogopro.geodetic.conversions import (
     GeodeticCoordinate,
     GridCoordinate,
@@ -114,3 +115,36 @@ class TestDistanceConversions:
         # At CM, scale ≈ 0.9996, at sea level
         grid_dist = ground_to_grid(1000.0, 0.9996, 0.0)
         assert math.isclose(grid_dist, 999.6, abs_tol=0.01)
+
+
+class TestGridCoordinateToPoint:
+    """Test GridCoordinate.to_point() interop."""
+
+    def test_to_point_basic(self):
+        grid = GridCoordinate(easting=630000.0, northing=4834000.0, zone=17)
+        pt = grid.to_point()
+        assert math.isclose(pt.northing, 4834000.0)
+        assert math.isclose(pt.easting, 630000.0)
+        assert pt.number is None
+        assert pt.description == ""
+
+    def test_to_point_with_metadata(self):
+        grid = GridCoordinate(easting=500000.0, northing=0.0, zone=17)
+        pt = grid.to_point(number=1, description="origin")
+        assert pt.number == 1
+        assert pt.description == "origin"
+
+    def test_from_point(self):
+        pt = Point(northing=4834000.0, easting=630000.0)
+        grid = GridCoordinate.from_point(pt, zone=17, hemisphere="N")
+        assert math.isclose(grid.easting, 630000.0)
+        assert math.isclose(grid.northing, 4834000.0)
+        assert grid.zone == 17
+        assert grid.hemisphere == "N"
+
+    def test_round_trip_point_grid(self):
+        pt = Point(northing=4834000.0, easting=630000.0, number=42)
+        grid = GridCoordinate.from_point(pt, zone=17)
+        recovered = grid.to_point(number=42)
+        assert math.isclose(recovered.northing, pt.northing)
+        assert math.isclose(recovered.easting, pt.easting)

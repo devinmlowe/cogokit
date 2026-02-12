@@ -19,7 +19,7 @@ def traverse(origin: Point, azimuth: float, distance: float, elevation: float = 
     """
     northing = origin.northing + distance * math.cos(azimuth)
     easting = origin.easting + distance * math.sin(azimuth)
-    return Point(northing, easting, elevation)
+    return Point(northing=northing, easting=easting, elevation=elevation)
 
 
 def sideshot(

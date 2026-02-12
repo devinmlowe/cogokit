@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from cogopro.core import Point
 from cogopro.geodetic.ellipsoid import Ellipsoid, WGS84
 
 
@@ -334,4 +335,59 @@ def utm_to_geodetic(
         false_easting=500_000.0,
         false_northing=false_northing,
         ellipsoid=ellipsoid,
+    )
+
+
+def utm_from_point(
+    point: Point,
+    zone: int | None = None,
+    ellipsoid: Ellipsoid = WGS84,
+) -> UTMResult:
+    """Convert a core.Point (interpreted as lat/lon in radians) to UTM.
+
+    The Point's northing is interpreted as latitude (radians) and easting
+    as longitude (radians).
+
+    Parameters:
+        point: A Point whose northing=latitude, easting=longitude (radians).
+        zone: UTM zone (auto-detected if None).
+        ellipsoid: Reference ellipsoid.
+
+    Returns:
+        UTMResult with easting, northing, zone, hemisphere, convergence, scale.
+    """
+    return geodetic_to_utm(point.northing, point.easting, zone=zone, ellipsoid=ellipsoid)
+
+
+def utm_to_point(
+    easting: float,
+    northing: float,
+    zone: int,
+    hemisphere: str = "N",
+    ellipsoid: Ellipsoid = WGS84,
+    number: int | None = None,
+    description: str = "",
+) -> Point:
+    """Convert UTM coordinates to a core.Point with grid northing/easting.
+
+    Returns a Point whose northing and easting are the UTM grid values
+    (not geodetic lat/lon).
+
+    Parameters:
+        easting: UTM easting in metres.
+        northing: UTM northing in metres.
+        zone: UTM zone number.
+        hemisphere: "N" or "S".
+        ellipsoid: Reference ellipsoid.
+        number: Optional point number.
+        description: Optional point description.
+
+    Returns:
+        Point with northing and easting set to the UTM grid values.
+    """
+    return Point(
+        northing=northing,
+        easting=easting,
+        number=number,
+        description=description,
     )

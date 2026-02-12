@@ -2,13 +2,16 @@
 
 import math
 
+from cogopro.core import Point
 from cogopro.geodetic.ellipsoid import WGS84
 from cogopro.geodetic.projections import (
     geodetic_to_utm,
     tm_forward,
     tm_inverse,
     utm_central_meridian,
+    utm_from_point,
     utm_to_geodetic,
+    utm_to_point,
     utm_zone,
 )
 
@@ -142,3 +145,42 @@ class TestTransverseMercator:
         fwd = tm_forward(lat, lon0, lon0=lon0, k0=1.0, false_easting=500000.0)
         assert math.isclose(fwd.easting, 500000.0, abs_tol=1e-6)
         assert math.isclose(fwd.convergence, 0.0, abs_tol=1e-12)
+
+
+class TestUTMFromPoint:
+    """Test utm_from_point convenience function."""
+
+    def test_matches_geodetic_to_utm(self):
+        lat = math.radians(43.6532)
+        lon = math.radians(-79.3832)
+
+        float_result = geodetic_to_utm(lat, lon)
+        pt = Point(northing=lat, easting=lon)
+        point_result = utm_from_point(pt)
+
+        assert point_result.zone == float_result.zone
+        assert point_result.hemisphere == float_result.hemisphere
+        assert math.isclose(point_result.easting, float_result.easting, rel_tol=1e-12)
+        assert math.isclose(point_result.northing, float_result.northing, rel_tol=1e-12)
+
+    def test_with_explicit_zone(self):
+        lat = math.radians(43.6532)
+        lon = math.radians(-79.3832)
+        pt = Point(northing=lat, easting=lon)
+        result = utm_from_point(pt, zone=18)
+        assert result.zone == 18
+
+
+class TestUTMToPoint:
+    """Test utm_to_point convenience function."""
+
+    def test_basic(self):
+        pt = utm_to_point(630000.0, 4834000.0, zone=17)
+        assert math.isclose(pt.northing, 4834000.0)
+        assert math.isclose(pt.easting, 630000.0)
+        assert pt.number is None
+
+    def test_with_metadata(self):
+        pt = utm_to_point(630000.0, 4834000.0, zone=17, number=100, description="bench mark")
+        assert pt.number == 100
+        assert pt.description == "bench mark"

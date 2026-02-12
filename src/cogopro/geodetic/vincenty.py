@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from cogopro.core import Angle
 from cogopro.geodetic.ellipsoid import Ellipsoid, WGS84
 
 _MAX_ITERATIONS = 200
@@ -225,3 +226,27 @@ def vincenty_direct(
     az_rev = math.atan2(sin_alpha, -sin_U1 * sin_sigma + cos_U1 * cos_sigma * cos_az) + math.pi
 
     return DirectResult(lat2, lon2, _normalise_az(az_rev))
+
+
+def vincenty_inverse_from_angles(
+    lat1: Angle,
+    lon1: Angle,
+    lat2: Angle,
+    lon2: Angle,
+    ellipsoid: Ellipsoid = WGS84,
+) -> InverseResult:
+    """Convenience wrapper for vincenty_inverse that accepts Angle objects.
+
+    Parameters:
+        lat1, lon1: Start point as Angle objects.
+        lat2, lon2: End point as Angle objects.
+        ellipsoid: Reference ellipsoid (default WGS84).
+
+    Returns:
+        InverseResult with distance (m), forward azimuth, reverse azimuth.
+    """
+    return vincenty_inverse(
+        lat1.radians, lon1.radians,
+        lat2.radians, lon2.radians,
+        ellipsoid,
+    )

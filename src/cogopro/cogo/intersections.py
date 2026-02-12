@@ -33,7 +33,7 @@ def bearing_bearing(
 
     northing = p1.northing + t1 * cos1
     easting = p1.easting + t1 * sin1
-    return Point(northing, easting)
+    return Point(northing=northing, easting=easting)
 
 
 def bearing_distance(
@@ -67,8 +67,8 @@ def bearing_distance(
     t1 = -b_coeff - sqrt_disc
     t2 = -b_coeff + sqrt_disc
 
-    pt1 = Point(p1.northing + t1 * cos_b, p1.easting + t1 * sin_b)
-    pt2 = Point(p1.northing + t2 * cos_b, p1.easting + t2 * sin_b)
+    pt1 = Point(northing=p1.northing + t1 * cos_b, easting=p1.easting + t1 * sin_b)
+    pt2 = Point(northing=p1.northing + t2 * cos_b, easting=p1.easting + t2 * sin_b)
     return (pt1, pt2)
 
 
@@ -105,6 +105,6 @@ def distance_distance(
     e_mid = p1.easting + a * de / d
 
     # Perpendicular offset
-    pt1 = Point(n_mid + h * de / d, e_mid - h * dn / d)
-    pt2 = Point(n_mid - h * de / d, e_mid + h * dn / d)
+    pt1 = Point(northing=n_mid + h * de / d, easting=e_mid - h * dn / d)
+    pt2 = Point(northing=n_mid - h * de / d, easting=e_mid + h * dn / d)
     return (pt1, pt2)

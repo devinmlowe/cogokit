@@ -15,6 +15,7 @@ from cogopro.solvers.horizontal_curve import (
     solve_curve,
     spiral,
     three_point_curve,
+    three_point_curve_from_points,
 )
 from cogopro.solvers.vertical_curve import (
     VerticalCurveData,
@@ -35,6 +36,7 @@ __all__ = [
     "solve_curve",
     "spiral",
     "three_point_curve",
+    "three_point_curve_from_points",
     "VerticalCurveData",
     "elevation_at",
     "solve_vertical_curve",
