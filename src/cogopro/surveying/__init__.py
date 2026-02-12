@@ -6,6 +6,7 @@ from .alignment import (
     CircularCurve,
     GradeBreak,
     HorizontalAlignment,
+    Spiral,
     Tangent,
     VerticalProfile,
 )
@@ -40,6 +41,7 @@ from .traverse_plus import (
     reduce_observation,
     resection_3point,
 )
+from .workflow import TraverseLeg, TraverseResult, TraverseWorkflow
 
 __all__ = [
     # alignment
@@ -48,6 +50,7 @@ __all__ = [
     "CircularCurve",
     "GradeBreak",
     "HorizontalAlignment",
+    "Spiral",
     "Tangent",
     "VerticalProfile",
     # cross_sections
@@ -77,4 +80,8 @@ __all__ = [
     "process_station",
     "reduce_observation",
     "resection_3point",
+    # workflow
+    "TraverseLeg",
+    "TraverseResult",
+    "TraverseWorkflow",
 ]

@@ -15,6 +15,7 @@ from cogopro.cogo.traverse import traverse as _traverse
 from cogopro.core import Angle, Point
 from cogopro.io import export_dxf, export_kml, read_points
 from cogopro.solvers.horizontal_curve import solve_curve
+from cogopro.surveying.workflow import TraverseWorkflow
 
 app = typer.Typer(help="COGO+ Pro — coordinate geometry and surveying toolkit")
 
@@ -225,3 +226,73 @@ def export(
         export_kml(job, out_path)
 
     typer.echo(f"Exported to {out_path}")
+
+
+@app.command("traverse-run")
+def traverse_run_cmd(
+    observations_file: Path = typer.Argument(..., help="CSV file with traverse observations"),
+    start_point: str = typer.Option(..., "--start-point", help="Start point: 'number northing easting [elevation]'"),
+    start_azimuth: float = typer.Option(..., "--start-azimuth", help="Starting backsight azimuth (HP notation)"),
+    close_to: Optional[int] = typer.Option(None, "--close-to", help="Close to point number (default: start)"),
+) -> None:
+    """Run a complete traverse workflow from an observations file."""
+    # Parse start point
+    parts = start_point.split()
+    if len(parts) < 3:
+        typer.echo("Error: --start-point requires 'number northing easting [elevation]'", err=True)
+        raise typer.Exit(code=1)
+
+    try:
+        sp = Point(
+            number=int(parts[0]),
+            northing=float(parts[1]),
+            easting=float(parts[2]),
+            elevation=float(parts[3]) if len(parts) > 3 else 0.0,
+        )
+    except (ValueError, IndexError):
+        typer.echo("Error: invalid --start-point format", err=True)
+        raise typer.Exit(code=1)
+
+    if not observations_file.exists():
+        typer.echo(f"Error: file not found: {observations_file}", err=True)
+        raise typer.Exit(code=1)
+
+    wf = TraverseWorkflow(
+        start_point=sp,
+        start_azimuth=start_azimuth,
+        close_to_start=(close_to is None or close_to == sp.number),
+    )
+
+    for line in observations_file.read_text().strip().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        fields = line.split(",")
+        wf.add_leg(
+            occupied=int(fields[0]),
+            backsight=int(fields[1]),
+            foresight=int(fields[2]),
+            angle_dms=float(fields[3]),
+            distance=float(fields[4]),
+            hi=float(fields[5]) if len(fields) > 5 else 0.0,
+            ht=float(fields[6]) if len(fields) > 6 else 0.0,
+        )
+
+    result = wf.run()
+
+    typer.echo("=== Traverse Workflow Results ===\n")
+    typer.echo(f"Angular Misclosure: {result.angular_misclosure.to_dms_string(4)}")
+    typer.echo(f"Angular Tolerance:  {result.angular_tolerance.to_dms_string(4)}")
+    typer.echo(f"Closure North:      {result.closure_north:.4f}")
+    typer.echo(f"Closure East:       {result.closure_east:.4f}")
+    typer.echo(f"Linear Misclosure:  {result.linear_misclosure:.4f}")
+    typer.echo(f"Perimeter:          {result.perimeter:.4f}")
+    if result.precision_ratio == float("inf"):
+        typer.echo("Precision Ratio:    Perfect (no misclosure)")
+    else:
+        typer.echo(f"Precision Ratio:    1:{result.precision_ratio:.0f}")
+    typer.echo("\n--- Adjusted Coordinates ---")
+    for pt in result.adjusted_job.points():
+        typer.echo(
+            f"  {pt.number:>5}  N={pt.northing:>12.4f}  E={pt.easting:>12.4f}  Z={pt.elevation:>10.4f}"
+        )
