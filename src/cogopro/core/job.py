@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Dict, Iterator, List, Optional
 
 from .point import Point
 from .units import AngularUnit, LinearUnit
+
+if TYPE_CHECKING:
+    from .crs import CRS
 
 
 @dataclass
@@ -17,6 +20,7 @@ class Job:
     description: str = ""
     linear_unit: LinearUnit = LinearUnit.FOOT
     angular_unit: AngularUnit = AngularUnit.DMS
+    crs: CRS | None = None
     _points: Dict[int, Point] = field(default_factory=dict, repr=False)
 
     @property

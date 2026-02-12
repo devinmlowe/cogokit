@@ -6,13 +6,14 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 
 ## Features
 
-**332 tests** covering all computational modules. Zero external dependencies beyond the Python standard library.
+**421 tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI).
 
 ### Core (`cogopro.core`)
 
 - **Point** - Survey point with northing/easting/elevation, distance and azimuth calculations
 - **Angle** - DMS, decimal degrees, radians, HP notation, and surveyor bearing conversions with full arithmetic
-- **Job** - Point collection container with add/get/remove/iterate operations
+- **Job** - Point collection container with add/get/remove/iterate operations and optional CRS
+- **CRS** - Coordinate reference system (geodetic/UTM) with point and job transformations between systems
 - **Units** - Linear (feet, meters, chains, links, rods) and angular (DMS, decimal degrees, radians, grads) unit conversions
 
 ### Coordinate Geometry (`cogopro.cogo`)
@@ -52,7 +53,8 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 ### I/O (`cogopro.io`)
 
 - **ASCII I/O** - Read/write delimited point files (space, tab, comma) with auto-detection
-- **Formats** - DXF and KML point export (basic stubs)
+- **DXF Export** - Point, text label, line, and polyline entities with layer organization
+- **KML Export** - Point export with automatic CRS-to-WGS84 coordinate transformation
 
 ## Installation
 
@@ -62,7 +64,7 @@ cd cogopro-python
 pip install -e ".[dev]"
 ```
 
-Requires Python 3.11+. No external dependencies for the library itself; only `pytest` and `ruff` for development.
+Requires Python 3.11+. Runtime dependency: `typer` (for CLI). Development: `pytest` and `ruff`.
 
 ## Usage
 
@@ -89,10 +91,36 @@ job = read_points("points.txt")
 write_points(job, "output.csv", delimiter=Delimiter.COMMA)
 ```
 
+## CLI
+
+After installation, the `cogopro` command is available:
+
+```bash
+# Inverse between two points
+cogopro inverse 1000 2000 1500 2500
+
+# Forward traverse
+cogopro traverse 1000 2000 45.0 100.0 --elevation 102.0
+
+# Polygon area from a points file
+cogopro area points.txt
+
+# Solve a horizontal curve (any 2 elements)
+cogopro curve --radius 500 --delta 30
+
+# Transform coordinates between CRS types
+cogopro convert points.txt --from-crs utm:17:N --to-crs geodetic:wgs84
+
+# Export to DXF or KML
+cogopro export points.txt --format dxf --output site.dxf
+```
+
+Run `cogopro --help` or `cogopro <command> --help` for full option details.
+
 ## Running Tests
 
 ```bash
-pytest           # Run all 332 tests
+pytest           # Run all 421 tests
 pytest -v        # Verbose output
 pytest tests/test_alignment.py  # Single module
 ```
@@ -102,14 +130,15 @@ pytest tests/test_alignment.py  # Single module
 ```
 cogopro-python/
   src/cogopro/
-    core/           # Point, Angle, Job, Units
+    cli.py          # Typer CLI
+    core/           # Point, Angle, Job, CRS, Units
     cogo/           # Inverse, traverse, intersections, area
     adjustments/    # Compass rule, Helmert, transforms
     solvers/        # Triangle, horizontal curve, vertical curve
     geodetic/       # Ellipsoids, Vincenty, projections, conversions
     surveying/      # Levelling, traverse+, alignment, stakeout, cross-sections
     io/             # ASCII I/O, DXF/KML export
-  tests/            # 332 tests across 22 test files
+  tests/            # 421 tests across 25 test files
   original/         # Original HP calculator source files (L930-L936)
 ```
 
@@ -129,22 +158,20 @@ cogopro-python/
 
 ### High Priority
 
-- **CLI interface** - Add a command-line tool (via `click` or `argparse`) for running common operations from the terminal: inverse, traverse, area, curve solving, coordinate conversions. Support batch processing of point files and piped input/output.
-- **Coordinate system awareness** - Currently all computations use raw coordinates. Add a CRS layer so jobs track their datum and projection, enabling automatic transformations between systems (e.g., State Plane to UTM, NAD83 to WGS84).
-- **DXF/KML export completion** - The current `io/formats.py` contains basic stubs. Flesh out DXF export with line/polyline entities, text labels, and layer organization. Fix KML export to transform local coordinates to WGS84 lat/lon via the geodetic module.
-
-### Medium Priority
-
 - **LandXML and CSV import/export** - Add LandXML support (industry standard for survey data exchange) and flexible CSV with configurable column mappings (point number, N, E, Z, description in any order).
 - **Traverse workflow** - Build a high-level traverse workflow that chains raw field observations through reduction, adjustment (compass rule or least squares), and coordinate computation in a single pipeline with angular closure check.
 - **Least-squares network adjustment** - Implement general-purpose least-squares adjustment for control survey networks with redundant observations, beyond the current Helmert and compass rule methods.
 - **Spiral alignment elements** - The alignment module supports tangents and circular curves. Add spiral (clothoid) transitions using the existing `solvers.horizontal_curve.spiral()` function.
 
-### Lower Priority
+### Medium Priority
 
+- **State Plane CRS support** - Extend the CRS layer beyond geodetic/UTM to support State Plane coordinate systems with zone definitions and custom TM parameters.
 - **Interactive TUI** - Build a terminal UI (via `textual` or `curses`) mirroring the original COGO+ Pro menu system for interactive field use.
 - **Report generation** - Generate formatted traverse reports, adjustment reports, and stakeout sheets as PDF or HTML.
 - **Point database backend** - Replace the in-memory `Job` dict with an optional SQLite backend for large projects with thousands of points.
+
+### Lower Priority
+
 - **3D slope staking** - Extend cross-sections and earthwork to handle iterative catch-point computation on irregular ground surfaces.
 - **Edge-case test hardening** - Additional testing for antipodal Vincenty, near-zero curves, degenerate triangles, and boundary conditions.
 

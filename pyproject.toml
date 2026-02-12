@@ -4,10 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cogopro"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python reimplementation of COGO+ Pro surveying/coordinate geometry software"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["typer>=0.9"]
+
+[project.scripts]
+cogopro = "cogopro.cli:app"
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
