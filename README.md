@@ -6,14 +6,14 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 
 ## Features
 
-**519 tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI). Optional: [NumPy](https://numpy.org/) for least-squares network adjustment.
+**588 tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI). Optional: [NumPy](https://numpy.org/) for least-squares network adjustment.
 
 ### Core (`cogopro.core`)
 
 - **Point** - Survey point with northing/easting/elevation, distance and azimuth calculations
 - **Angle** - DMS, decimal degrees, radians, HP notation, and surveyor bearing conversions with full arithmetic
 - **Job** - Point collection container with add/get/remove/iterate operations and optional CRS
-- **CRS** - Coordinate reference system (geodetic/UTM) with point and job transformations between systems
+- **CRS** - Coordinate reference system (geodetic/UTM/State Plane/custom projected) with point and job transformations between systems
 - **Units** - Linear (feet, meters, chains, links, rods) and angular (DMS, decimal degrees, radians, grads) unit conversions
 
 ### Coordinate Geometry (`cogopro.cogo`)
@@ -40,7 +40,9 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 
 - **Ellipsoids** - 9 reference ellipsoids (WGS84, GRS80, Clarke 1866, etc.) with derived parameters
 - **Vincenty** - Direct and inverse geodesic solutions on the ellipsoid
-- **Projections** - Transverse Mercator and UTM forward/inverse projections
+- **Projections** - Transverse Mercator, Lambert Conformal Conic, Hotine Oblique Mercator, and UTM forward/inverse projections
+- **State Plane** - 122 NAD83 SPCS zone definitions with lookup by EPSG code, state, or zone name
+- **PROJ4 Parser** - Parse PROJ4 strings into projection definitions for custom CRS
 - **Conversions** - Grid-to-geodetic coordinate conversion, combined scale factor, ground/grid distance
 
 ### Surveying (`cogopro.surveying`)
@@ -115,6 +117,13 @@ cogopro curve --radius 500 --delta 30
 # Transform coordinates between CRS types
 cogopro convert points.txt --from-crs utm:17:N --to-crs geodetic:wgs84
 
+# Convert to State Plane (by EPSG code or state:zone)
+cogopro convert points.txt --from-crs geodetic:nad83 --to-crs epsg:26945
+cogopro convert points.txt --from-crs utm:11:N --to-crs sp:CA:5
+
+# List available State Plane zones
+cogopro zones --state TX
+
 # Export to DXF or KML
 cogopro export points.txt --format dxf --output site.dxf
 
@@ -127,7 +136,7 @@ Run `cogopro --help` or `cogopro <command> --help` for full option details.
 ## Running Tests
 
 ```bash
-pytest           # Run all 519 tests
+pytest           # Run all 588 tests
 pytest -v        # Verbose output
 pytest tests/test_alignment.py  # Single module
 ```
@@ -142,10 +151,11 @@ cogopro-python/
     cogo/           # Inverse, traverse, intersections, area
     adjustments/    # Compass rule, Helmert, least-squares, transforms
     solvers/        # Triangle, horizontal curve, vertical curve
-    geodetic/       # Ellipsoids, Vincenty, projections, conversions
+    geodetic/       # Ellipsoids, Vincenty, projections, State Plane, PROJ4 parser
     surveying/      # Levelling, traverse+, alignment, stakeout, cross-sections, workflow
     io/             # ASCII/CSV I/O, LandXML, DXF/KML export
-  tests/            # 519 tests across 29 test files
+    data/           # SPCS zone database (JSON)
+  tests/            # 588 tests across 33 test files
   original/         # Original HP calculator source files (L930-L936)
 ```
 
@@ -165,7 +175,6 @@ cogopro-python/
 
 ### High Priority
 
-- **State Plane CRS support** - Extend the CRS layer beyond geodetic/UTM to support State Plane coordinate systems with zone definitions and custom TM parameters.
 - **GPS baseline observations** - Add 3D GPS baseline vectors to the least-squares network adjustment module (requires different weight model).
 - **Interactive TUI** - Build a terminal UI (via `textual` or `curses`) mirroring the original COGO+ Pro menu system for interactive field use.
 
