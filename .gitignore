@@ -13,4 +13,5 @@ venv/
 .mypy_cache/
 .ruff_cache/
 *.so
+*.dxf
 CLAUDE.md
