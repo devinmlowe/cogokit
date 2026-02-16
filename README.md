@@ -6,13 +6,13 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 
 ## Features
 
-**588 tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI). Optional: [NumPy](https://numpy.org/) for least-squares network adjustment.
+**660 tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI). Optional: [NumPy](https://numpy.org/) for least-squares network adjustment.
 
 ### Core (`cogopro.core`)
 
 - **Point** - Survey point with northing/easting/elevation, distance and azimuth calculations
 - **Angle** - DMS, decimal degrees, radians, HP notation, and surveyor bearing conversions with full arithmetic
-- **Job** - Point collection container with add/get/remove/iterate operations and optional CRS
+- **Job** - SQLite-backed point collection with add/get/remove/iterate operations, optional CRS, and persistent storage (`db_path` parameter)
 - **CRS** - Coordinate reference system (geodetic/UTM/State Plane/custom projected) with point and job transformations between systems
 - **Units** - Linear (feet, meters, chains, links, rods) and angular (DMS, decimal degrees, radians, grads) unit conversions
 
@@ -51,8 +51,8 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 - **Traverse Plus** - Total station field observation reduction (HI/HT, slope-to-horizontal), station processing, Tienstra 3-point resection
 - **Alignment** - Horizontal alignment (tangents, circular curves, clothoid spirals), vertical profile with grade breaks and vertical curves, combined 3D alignment with station/offset
 - **Traverse Workflow** - End-to-end traverse pipeline: observation reduction, angular closure, coordinate computation, compass rule adjustment with precision analysis
-- **Stakeout** - Point and alignment stakeout calculations, batch staking, slope staking with cut/fill
-- **Cross Sections** - Cross-section templates, cut/fill area computation, average end area and prismoidal volumes, earthwork summaries, mass haul ordinates
+- **Stakeout** - Point and alignment stakeout calculations, batch staking, slope staking with cut/fill, 3D slope staking with iterative catch-point computation on irregular ground surfaces
+- **Cross Sections** - Cross-section templates, cut/fill area computation, average end area and prismoidal volumes, earthwork summaries, mass haul ordinates, bilinear surface interpolation
 
 ### I/O (`cogopro.io`)
 
@@ -61,6 +61,7 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 - **LandXML** - Import points from LandXML 1.2; export points, parcels, and alignments
 - **DXF Export** - Point, text label, line, and polyline entities with layer organization
 - **KML Export** - Point export with automatic CRS-to-WGS84 coordinate transformation
+- **HTML Reports** - Standalone, print-friendly field reports with inline CSS and SVG diagrams for all CLI commands (`--report` flag)
 
 ## Installation
 
@@ -129,6 +130,10 @@ cogopro export points.txt --format dxf --output site.dxf
 
 # Run a full traverse workflow from observations
 cogopro traverse-run observations.csv --start-point "1 1000.0 5000.0 100.0" --start-azimuth 45.0
+
+# Generate an HTML field report (works with any command)
+cogopro inverse 1000 2000 1500 2500 --report ./reports/
+cogopro curve --radius 500 --delta 30 --report curve_report.html
 ```
 
 Run `cogopro --help` or `cogopro <command> --help` for full option details.
@@ -136,7 +141,7 @@ Run `cogopro --help` or `cogopro <command> --help` for full option details.
 ## Running Tests
 
 ```bash
-pytest           # Run all 588 tests
+pytest           # Run all 660 tests
 pytest -v        # Verbose output
 pytest tests/test_alignment.py  # Single module
 ```
@@ -153,9 +158,12 @@ cogopro-python/
     solvers/        # Triangle, horizontal curve, vertical curve
     geodetic/       # Ellipsoids, Vincenty, projections, State Plane, PROJ4 parser
     surveying/      # Levelling, traverse+, alignment, stakeout, cross-sections, workflow
-    io/             # ASCII/CSV I/O, LandXML, DXF/KML export
+    io/             # ASCII/CSV I/O, LandXML, DXF/KML export, HTML reports
     data/           # SPCS zone database (JSON)
-  tests/            # 588 tests across 33 test files
+  examples/
+    data/           # Sample point files and traverse observations
+    reports/        # Example HTML reports for all 8 CLI commands
+  tests/            # 660 tests across 36 test files
   original/         # Original HP calculator source files (L930-L936)
 ```
 
@@ -175,19 +183,19 @@ cogopro-python/
 
 ### High Priority
 
-- **GPS baseline observations** - Add 3D GPS baseline vectors to the least-squares network adjustment module (requires different weight model).
-- **Interactive TUI** - Build a terminal UI (via `textual` or `curses`) mirroring the original COGO+ Pro menu system for interactive field use.
-
-### Medium Priority
-
-- **Report generation** - Generate formatted traverse reports, adjustment reports, and stakeout sheets as PDF or HTML.
-- **Point database backend** - Replace the in-memory `Job` dict with an optional SQLite backend for large projects with thousands of points.
-- **3D slope staking** - Extend cross-sections and earthwork to handle iterative catch-point computation on irregular ground surfaces.
+- **GPS baseline observations** ([#2](../../issues/2)) - Add 3D GPS baseline vectors to the least-squares network adjustment module (requires 3×3 variance-covariance weight model and ECEF coordinate frame).
+- **Interactive TUI** ([#3](../../issues/3)) - Build a terminal UI (via `textual`) mirroring the original COGO+ Pro menu system for interactive field use.
 
 ### Lower Priority
 
-- **LandXML complex import** - Import alignments and parcels from LandXML (currently export-only for these; point import is complete).
-- **Edge-case test hardening** - Additional testing for antipodal Vincenty, near-zero curves, degenerate triangles, and boundary conditions.
+- **LandXML complex import** ([#4](../../issues/4)) - Import alignments and parcels from LandXML (currently export-only for these; point import is complete).
+- **Edge-case test hardening** ([#5](../../issues/5)) - Additional testing for antipodal Vincenty, near-zero curves, degenerate triangles, and boundary conditions.
+
+### Completed
+
+- ~~**Report generation**~~ - HTML field reports with SVG diagrams via `--report` flag on all CLI commands.
+- ~~**Point database backend**~~ - Job class backed by SQLite with in-memory default and optional persistent storage.
+- ~~**3D slope staking**~~ - Iterative catch-point computation on irregular ground surfaces with bilinear surface interpolation.
 
 ## Origin
 
