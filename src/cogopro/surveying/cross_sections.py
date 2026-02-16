@@ -103,6 +103,55 @@ def _interpolate_profile(
     return elevations
 
 
+def interpolate_surface(
+    sections: List[CrossSection], station: float, offset: float
+) -> float:
+    """Interpolate ground elevation at an arbitrary station/offset.
+
+    Performs bilinear interpolation: first interpolates each bracketing
+    section's profile at the given offset, then linearly interpolates
+    between the two results along the station axis.
+
+    Args:
+        sections: At least 2 cross-sections with measured ground points.
+        station: Station value along the alignment.
+        offset: Perpendicular offset from centerline.
+
+    Returns:
+        Interpolated ground elevation.
+
+    Raises:
+        ValueError: If fewer than 2 sections are provided.
+    """
+    if len(sections) < 2:
+        raise ValueError("interpolate_surface requires at least 2 sections")
+
+    sorted_secs = sorted(sections, key=lambda s: s.station)
+
+    # Clamp station to section range
+    if station <= sorted_secs[0].station:
+        return _interpolate_profile(sorted_secs[0].sorted_points, [offset])[0]
+    if station >= sorted_secs[-1].station:
+        return _interpolate_profile(sorted_secs[-1].sorted_points, [offset])[0]
+
+    # Find bracketing sections
+    for i in range(len(sorted_secs) - 1):
+        if sorted_secs[i].station <= station <= sorted_secs[i + 1].station:
+            s0 = sorted_secs[i]
+            s1 = sorted_secs[i + 1]
+            break
+
+    elev0 = _interpolate_profile(s0.sorted_points, [offset])[0]
+    elev1 = _interpolate_profile(s1.sorted_points, [offset])[0]
+
+    # Linear interpolation along station axis
+    dsta = s1.station - s0.station
+    if dsta == 0:
+        return elev0
+    t = (station - s0.station) / dsta
+    return elev0 + t * (elev1 - elev0)
+
+
 def section_area(
     ground: CrossSection,
     template: DesignTemplate,

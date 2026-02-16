@@ -16,6 +16,7 @@ from .cross_sections import (
     DesignTemplate,
     average_end_area,
     compute_earthwork,
+    interpolate_surface,
     mass_haul,
     prismoidal_volume,
     section_area,
@@ -28,10 +29,15 @@ from .levelling import (
     reduce_level_run,
 )
 from .stakeout import (
+    SlopeStakePoint,
+    SlopeStakeResult,
     StakeoutResult,
     batch_stake,
     slope_stake,
+    slope_stake_3d,
+    slope_stake_3d_batch,
     stake_alignment_station,
+    stake_catch_point,
     stake_point,
 )
 from .traverse_plus import (
@@ -59,6 +65,7 @@ __all__ = [
     "DesignTemplate",
     "average_end_area",
     "compute_earthwork",
+    "interpolate_surface",
     "mass_haul",
     "prismoidal_volume",
     "section_area",
@@ -69,10 +76,15 @@ __all__ = [
     "adjust_level_loop",
     "reduce_level_run",
     # stakeout
+    "SlopeStakePoint",
+    "SlopeStakeResult",
     "StakeoutResult",
     "batch_stake",
     "slope_stake",
+    "slope_stake_3d",
+    "slope_stake_3d_batch",
     "stake_alignment_station",
+    "stake_catch_point",
     "stake_point",
     # traverse_plus
     "FieldObservation",
