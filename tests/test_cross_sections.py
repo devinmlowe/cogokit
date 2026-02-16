@@ -2,6 +2,8 @@
 
 import math
 
+import pytest
+
 from cogopro.surveying.cross_sections import (
     CrossSection,
     CrossSectionPoint,
@@ -413,3 +415,166 @@ def test_sorted_points():
     sp = cs.sorted_points
     offsets = [p.offset for p in sp]
     assert offsets == [-5.0, 0.0, 5.0]
+
+
+# ---------------------------------------------------------------------------
+# interpolate_surface tests
+# ---------------------------------------------------------------------------
+
+
+from cogopro.surveying.cross_sections import interpolate_surface
+
+
+def _make_sections():
+    """Build three flat sections for interpolation tests.
+
+    Station 0: flat at elevation 100
+    Station 100: flat at elevation 104
+    Station 200: flat at elevation 108
+    Each has offsets at -10, 0, +10 (flat profile per section).
+    """
+    return [
+        CrossSection(
+            station=0.0,
+            points=[
+                CrossSectionPoint(-10.0, 100.0),
+                CrossSectionPoint(0.0, 100.0),
+                CrossSectionPoint(10.0, 100.0),
+            ],
+        ),
+        CrossSection(
+            station=100.0,
+            points=[
+                CrossSectionPoint(-10.0, 104.0),
+                CrossSectionPoint(0.0, 104.0),
+                CrossSectionPoint(10.0, 104.0),
+            ],
+        ),
+        CrossSection(
+            station=200.0,
+            points=[
+                CrossSectionPoint(-10.0, 108.0),
+                CrossSectionPoint(0.0, 108.0),
+                CrossSectionPoint(10.0, 108.0),
+            ],
+        ),
+    ]
+
+
+def test_interpolate_surface_exact_point():
+    """Query at an exact known station/offset returns measured value."""
+    sections = _make_sections()
+    elev = interpolate_surface(sections, station=100.0, offset=0.0)
+    assert math.isclose(elev, 104.0, abs_tol=1e-9)
+
+
+def test_interpolate_surface_midpoint_station():
+    """Midpoint between two sections (flat profiles) → linear blend."""
+    sections = _make_sections()
+    # Midpoint between sta 0 (elev 100) and sta 100 (elev 104) → 102
+    elev = interpolate_surface(sections, station=50.0, offset=0.0)
+    assert math.isclose(elev, 102.0, abs_tol=1e-9)
+
+
+def test_interpolate_surface_non_measured_offset():
+    """Interpolation at a non-measured offset within a section."""
+    # Section with sloping profile: -10→100, 0→102, 10→104
+    sections = [
+        CrossSection(
+            station=0.0,
+            points=[
+                CrossSectionPoint(-10.0, 100.0),
+                CrossSectionPoint(0.0, 102.0),
+                CrossSectionPoint(10.0, 104.0),
+            ],
+        ),
+        CrossSection(
+            station=100.0,
+            points=[
+                CrossSectionPoint(-10.0, 100.0),
+                CrossSectionPoint(0.0, 102.0),
+                CrossSectionPoint(10.0, 104.0),
+            ],
+        ),
+    ]
+    # Offset 5 is between 0→102 and 10→104, so elev = 103
+    elev = interpolate_surface(sections, station=0.0, offset=5.0)
+    assert math.isclose(elev, 103.0, abs_tol=1e-9)
+
+
+def test_interpolate_surface_bilinear():
+    """Both station and offset interpolated (bilinear)."""
+    # sta 0: flat at 100; sta 100: sloping -10→100, 0→104, 10→108
+    sections = [
+        CrossSection(
+            station=0.0,
+            points=[
+                CrossSectionPoint(-10.0, 100.0),
+                CrossSectionPoint(0.0, 100.0),
+                CrossSectionPoint(10.0, 100.0),
+            ],
+        ),
+        CrossSection(
+            station=100.0,
+            points=[
+                CrossSectionPoint(-10.0, 100.0),
+                CrossSectionPoint(0.0, 104.0),
+                CrossSectionPoint(10.0, 108.0),
+            ],
+        ),
+    ]
+    # At sta 0, offset 5 → 100 (flat)
+    # At sta 100, offset 5 → 106 (midway between 104 and 108)
+    # At sta 50 (midpoint), blend → (100 + 106) / 2 = 103
+    elev = interpolate_surface(sections, station=50.0, offset=5.0)
+    assert math.isclose(elev, 103.0, abs_tol=1e-9)
+
+
+def test_interpolate_surface_clamp_before_first():
+    """Station before first section clamps to first section."""
+    sections = _make_sections()
+    # sta -50 should clamp to sta 0 → elev 100
+    elev = interpolate_surface(sections, station=-50.0, offset=0.0)
+    assert math.isclose(elev, 100.0, abs_tol=1e-9)
+
+
+def test_interpolate_surface_clamp_after_last():
+    """Station after last section clamps to last section."""
+    sections = _make_sections()
+    # sta 250 should clamp to sta 200 → elev 108
+    elev = interpolate_surface(sections, station=250.0, offset=0.0)
+    assert math.isclose(elev, 108.0, abs_tol=1e-9)
+
+
+def test_interpolate_surface_two_sections():
+    """Works with exactly two sections."""
+    sections = [
+        CrossSection(
+            station=0.0,
+            points=[
+                CrossSectionPoint(-5.0, 100.0),
+                CrossSectionPoint(5.0, 100.0),
+            ],
+        ),
+        CrossSection(
+            station=50.0,
+            points=[
+                CrossSectionPoint(-5.0, 110.0),
+                CrossSectionPoint(5.0, 110.0),
+            ],
+        ),
+    ]
+    elev = interpolate_surface(sections, station=25.0, offset=0.0)
+    assert math.isclose(elev, 105.0, abs_tol=1e-9)
+
+
+def test_interpolate_surface_fewer_than_two_sections():
+    """Raises ValueError if fewer than 2 sections provided."""
+    with pytest.raises(ValueError):
+        interpolate_surface([], station=0.0, offset=0.0)
+    with pytest.raises(ValueError):
+        interpolate_surface(
+            [CrossSection(station=0.0, points=[CrossSectionPoint(0.0, 100.0)])],
+            station=0.0,
+            offset=0.0,
+        )
