@@ -28,6 +28,7 @@ def inverse_cmd(
     e2: float = typer.Argument(..., help="Easting of point 2"),
     z1: float = typer.Argument(0.0, help="Elevation of point 1"),
     z2: float = typer.Argument(0.0, help="Elevation of point 2"),
+    report: Optional[Path] = typer.Option(None, "--report", help="Generate HTML report"),
 ) -> None:
     """Compute azimuth, distance, and grade between two points."""
     p1 = Point(northing=n1, easting=e1, elevation=z1)
@@ -39,6 +40,11 @@ def inverse_cmd(
     typer.echo(f"Slope Dist:    {result.slope_distance:.4f}")
     typer.echo(f"Vert. Dist:    {result.vertical_distance:.4f}")
     typer.echo(f"Grade:         {result.grade:.4f}%")
+    if report is not None:
+        from cogopro.io.reports import report_inverse, write_report
+        html = report_inverse(p1, p2, result)
+        out = write_report(html, report, "inverse")
+        typer.echo(f"Report: {out}")
 
 
 @app.command("traverse")
@@ -48,6 +54,7 @@ def traverse_cmd(
     azimuth: float = typer.Argument(..., help="Azimuth in degrees"),
     distance: float = typer.Argument(..., help="Horizontal distance"),
     elevation: float = typer.Option(0.0, help="Elevation of new point"),
+    report: Optional[Path] = typer.Option(None, "--report", help="Generate HTML report"),
 ) -> None:
     """Compute a new point from origin, azimuth, and distance."""
     origin = Point(northing=n, easting=e)
@@ -56,11 +63,17 @@ def traverse_cmd(
     typer.echo(f"N: {pt.northing:.4f}")
     typer.echo(f"E: {pt.easting:.4f}")
     typer.echo(f"Z: {pt.elevation:.4f}")
+    if report is not None:
+        from cogopro.io.reports import report_traverse, write_report
+        html = report_traverse(origin, az_rad, distance, pt)
+        out = write_report(html, report, "traverse")
+        typer.echo(f"Report: {out}")
 
 
 @app.command()
 def area(
     points_file: Path = typer.Argument(..., help="Path to points file"),
+    report: Optional[Path] = typer.Option(None, "--report", help="Generate HTML report"),
 ) -> None:
     """Compute polygon area and perimeter from a points file."""
     if not points_file.exists():
@@ -75,6 +88,11 @@ def area(
     p = polygon_perimeter(pts)
     typer.echo(f"Area:      {a:.4f}")
     typer.echo(f"Perimeter: {p:.4f}")
+    if report is not None:
+        from cogopro.io.reports import report_area, write_report
+        html = report_area(pts, a, p)
+        out = write_report(html, report, "area")
+        typer.echo(f"Report: {out}")
 
 
 @app.command()
@@ -87,6 +105,7 @@ def curve(
     external: Optional[float] = typer.Option(None, help="External distance"),
     mid_ordinate: Optional[float] = typer.Option(None, "--mid-ordinate", help="Middle ordinate"),
     degree: Optional[float] = typer.Option(None, help="Degree of curve"),
+    report: Optional[Path] = typer.Option(None, "--report", help="Generate HTML report"),
 ) -> None:
     """Solve a horizontal curve from any two elements."""
     kwargs: dict[str, float] = {}
@@ -126,12 +145,18 @@ def curve(
     typer.echo(f"External:  {c.E:.4f}")
     typer.echo(f"Mid-Ord:   {c.M:.4f}")
     typer.echo(f"Degree:    {c.D:.4f}")
+    if report is not None:
+        from cogopro.io.reports import report_curve, write_report
+        html = report_curve(kwargs, c)
+        out = write_report(html, report, "curve")
+        typer.echo(f"Report: {out}")
 
 
 @app.command()
 def zones(
     state: Optional[str] = typer.Option(None, help="Filter by state abbreviation (e.g. TX)"),
     epsg: Optional[int] = typer.Option(None, help="Show details for a specific EPSG code"),
+    report: Optional[Path] = typer.Option(None, "--report", help="Generate HTML report"),
 ) -> None:
     """List available State Plane coordinate system zones."""
     from cogopro.geodetic.state_plane import get_zone, list_zones
@@ -148,6 +173,11 @@ def zones(
         typer.echo(f"Zone:  {zone.zone}")
         typer.echo(f"Type:  {zone.proj_def.proj_type}")
         typer.echo(f"Units: {zone.proj_def.units}")
+        if report is not None:
+            from cogopro.io.reports import report_zones, write_report
+            html = report_zones([zone], state_filter=zone.state)
+            out = write_report(html, report, "zones")
+            typer.echo(f"Report: {out}")
         return
 
     zone_list = list_zones(state=state)
@@ -157,6 +187,11 @@ def zones(
 
     for z in zone_list:
         typer.echo(f"  EPSG:{z.epsg:<6}  {z.state}  {z.zone:<20}  {z.proj_def.proj_type}")
+    if report is not None:
+        from cogopro.io.reports import report_zones, write_report
+        html = report_zones(zone_list, state_filter=state)
+        out = write_report(html, report, "zones")
+        typer.echo(f"Report: {out}")
 
 
 def _parse_crs(crs_str: str):
@@ -218,6 +253,7 @@ def convert(
     from_crs: str = typer.Option(..., "--from-crs", help="Source CRS (e.g. utm:17:N)"),
     to_crs: str = typer.Option(..., "--to-crs", help="Target CRS (e.g. geodetic:wgs84)"),
     output: Optional[Path] = typer.Option(None, help="Output file (default: stdout)"),
+    report: Optional[Path] = typer.Option(None, "--report", help="Generate HTML report"),
 ) -> None:
     """Transform coordinates between CRS types."""
     if not points_file.exists():
@@ -249,6 +285,11 @@ def convert(
         typer.echo(f"Written to {output}")
     else:
         typer.echo(text, nl=False)
+    if report is not None:
+        from cogopro.io.reports import report_convert, write_report
+        html = report_convert(from_crs, to_crs, job.points(), transformed.points())
+        out = write_report(html, report, "convert")
+        typer.echo(f"Report: {out}")
 
 
 @app.command()
@@ -256,6 +297,7 @@ def export(
     points_file: Path = typer.Argument(..., help="Path to points file"),
     fmt: str = typer.Option(..., "--format", help="Export format: dxf or kml"),
     output: Optional[Path] = typer.Option(None, help="Output file"),
+    report: Optional[Path] = typer.Option(None, "--report", help="Generate HTML report"),
 ) -> None:
     """Export points to DXF or KML format."""
     if not points_file.exists():
@@ -277,6 +319,11 @@ def export(
         export_kml(job, out_path)
 
     typer.echo(f"Exported to {out_path}")
+    if report is not None:
+        from cogopro.io.reports import report_export, write_report
+        html = report_export(job.name, len(job.points()), fmt_lower.upper(), str(out_path))
+        out = write_report(html, report, "export")
+        typer.echo(f"Report: {out}")
 
 
 @app.command("traverse-run")
@@ -285,6 +332,7 @@ def traverse_run_cmd(
     start_point: str = typer.Option(..., "--start-point", help="Start point: 'number northing easting [elevation]'"),
     start_azimuth: float = typer.Option(..., "--start-azimuth", help="Starting backsight azimuth (HP notation)"),
     close_to: Optional[int] = typer.Option(None, "--close-to", help="Close to point number (default: start)"),
+    report: Optional[Path] = typer.Option(None, "--report", help="Generate HTML report"),
 ) -> None:
     """Run a complete traverse workflow from an observations file."""
     # Parse start point
@@ -308,16 +356,21 @@ def traverse_run_cmd(
         typer.echo(f"Error: file not found: {observations_file}", err=True)
         raise typer.Exit(code=1)
 
+    # Read raw observation lines for the report
+    raw_obs_lines = []
+    for line in observations_file.read_text().strip().splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        raw_obs_lines.append(stripped)
+
     wf = TraverseWorkflow(
         start_point=sp,
         start_azimuth=start_azimuth,
         close_to_start=(close_to is None or close_to == sp.number),
     )
 
-    for line in observations_file.read_text().strip().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
+    for line in raw_obs_lines:
         fields = line.split(",")
         wf.add_leg(
             occupied=int(fields[0]),
@@ -347,3 +400,10 @@ def traverse_run_cmd(
         typer.echo(
             f"  {pt.number:>5}  N={pt.northing:>12.4f}  E={pt.easting:>12.4f}  Z={pt.elevation:>10.4f}"
         )
+    if report is not None:
+        from cogopro.core import Angle as _Angle
+        from cogopro.io.reports import report_traverse_run, write_report
+        start_az_rad = _Angle.from_hp_notation(start_azimuth).radians
+        html = report_traverse_run(result, raw_obs_lines, sp, start_az_rad)
+        out = write_report(html, report, "traverse-run")
+        typer.echo(f"Report: {out}")
