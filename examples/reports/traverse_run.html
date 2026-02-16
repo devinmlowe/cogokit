@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Traverse Run Report</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    max-width: 800px; margin: 0 auto; padding: 24px;
+    color: #1a2332; background: #fff; line-height: 1.5;
+}
+h1 { font-size: 1.5rem; margin-bottom: 4px; color: #1a2332; }
+h2 { font-size: 1.15rem; margin: 20px 0 8px; color: #1a2332;
+     border-bottom: 2px solid #e0e0e0; padding-bottom: 4px; }
+.subtitle { color: #666; font-size: 0.85rem; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; }
+th { background: #2c3e50; color: #fff; text-align: left;
+     padding: 8px 10px; font-weight: 600; font-size: 0.85rem; }
+td { padding: 6px 10px; font-size: 0.85rem; border-bottom: 1px solid #e0e0e0; }
+tr:nth-child(even) td { background: #f8f9fa; }
+tr:nth-child(odd)  td { background: #fff; }
+.mono { font-family: "SF Mono", "Fira Code", "Consolas", monospace; }
+.right { text-align: right; }
+.center { text-align: center; }
+.summary-box { background: #f0f4f8; border-left: 4px solid #2c3e50;
+               padding: 12px 16px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+.summary-box dt { font-weight: 600; display: inline; }
+.summary-box dd { display: inline; margin-left: 4px; }
+.summary-box dl { margin: 0; }
+.summary-box .row { margin: 4px 0; }
+.pass { color: #27ae60; font-weight: 700; }
+.fail { color: #e74c3c; font-weight: 700; }
+.bold { font-weight: 700; }
+svg { display: block; margin: 12px auto; }
+footer { margin-top: 24px; padding-top: 8px;
+         border-top: 1px solid #e0e0e0; font-size: 0.75rem; color: #999; }
+@media print {
+    body { padding: 0; }
+    .no-print { display: none; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td {
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+}
+</style>
+</head>
+<body>
+<h1>Traverse Run Report</h1>
+<p class="subtitle">Generated 2026-02-16 07:43:33 by COGOpro</p>
+<h2>Starting Conditions</h2>
+<div class="summary-box">
+<div class="row"><dt>Start Point:</dt> <dd>1 &mdash; N: <span class="mono">5,000.0000</span>, E: <span class="mono">5,000.0000</span></dd></div>
+<div class="row"><dt>Start Azimuth:</dt> <dd class="mono">0°00'00.00&quot;</dd></div>
+</div>
+<h2>Observations</h2>
+<table>
+<tr><th>#</th><th>Observation</th></tr>
+<tr><td class="mono">1</td><td class="mono">1,0,2,90.0003,250.025,5.25,5.80</td></tr>
+<tr><td class="mono">2</td><td class="mono">2,1,3,89.5958,200.018,5.25,5.80</td></tr>
+<tr><td class="mono">3</td><td class="mono">3,2,4,90.0008,250.030,5.25,5.80</td></tr>
+<tr><td class="mono">4</td><td class="mono">4,3,1,89.5953,200.012,5.25,5.80</td></tr>
+</table>
+<h2>Angular Closure</h2>
+<div class="summary-box">
+<div class="row"><dt>Angular Misclosure:</dt> <dd class="mono">0°00'02.00&quot;</dd></div>
+<div class="row"><dt>Tolerance (10&Prime;&radic;n):</dt> <dd class="mono">0°00'20.00&quot;</dd></div>
+<div class="row"><dt>Status:</dt> <dd class="pass">PASS</dd></div>
+</div>
+<h2>Linear Closure</h2>
+<div class="summary-box">
+<div class="row"><dt>Closure North:</dt> <dd class="mono">0.0121</dd></div>
+<div class="row"><dt>Closure East:</dt> <dd class="mono">-0.0050</dd></div>
+<div class="row"><dt>Linear Misclosure:</dt> <dd class="mono">0.0131</dd></div>
+<div class="row"><dt>Perimeter:</dt> <dd class="mono">900.08</dd></div>
+<div class="row"><dt>Precision Ratio:</dt> <dd class="mono bold">1:68,939</dd></div>
+</div>
+<h2>Raw (Unadjusted) Coordinates</h2>
+<table>
+<tr><th>Point</th><th class="right">Northing</th><th class="right">Easting</th></tr>
+<tr><td>1</td><td class="right mono">5,000.0000</td><td class="right mono">5,000.0000</td></tr>
+<tr><td>2</td><td class="right mono">4,999.9970</td><td class="right mono">5,250.0250</td></tr>
+<tr><td>3</td><td class="right mono">5,200.0150</td><td class="right mono">5,250.0250</td></tr>
+<tr><td>4</td><td class="right mono">5,200.0241</td><td class="right mono">4,999.9950</td></tr>
+<tr><td>1</td><td class="right mono">5,000.0121</td><td class="right mono">4,999.9950</td></tr>
+</table>
+<h2>Adjusted Coordinates</h2>
+<table>
+<tr><th>Point</th><th class="right">Northing</th><th class="right">Easting</th></tr>
+<tr><td>1</td><td class="right mono">5,000.0000</td><td class="right mono">5,000.0000</td></tr>
+<tr><td>2</td><td class="right mono">4,999.9936</td><td class="right mono">5,250.0264</td></tr>
+<tr><td>3</td><td class="right mono">5,200.0089</td><td class="right mono">5,250.0275</td></tr>
+<tr><td>4</td><td class="right mono">5,200.0147</td><td class="right mono">4,999.9989</td></tr>
+<tr><td>1</td><td class="right mono">5,000.0000</td><td class="right mono">5,000.0000</td></tr>
+</table>
+<h2>Traverse Diagram</h2>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+<rect width="400" height="300" fill="#fafbfc" rx="4" />
+<line x1="40.0" y1="260.0" x2="315.0" y2="260.0" stroke="#2c3e50" stroke-width="2" />
+<line x1="315.0" y1="260.0" x2="315.0" y2="40.0" stroke="#2c3e50" stroke-width="2" />
+<line x1="315.0" y1="40.0" x2="40.0" y2="40.0" stroke="#2c3e50" stroke-width="2" />
+<line x1="40.0" y1="40.0" x2="40.0" y2="260.0" stroke="#2c3e50" stroke-width="2" />
+<line x1="40.0" y1="260.0" x2="40.0" y2="260.0" stroke="#999" stroke-width="2" />
+<circle cx="40.0" cy="260.0" r="4" fill="#2c3e50" />
+<text x="40.0" y="250.0" font-size="11" text-anchor="middle" fill="#1a2332" font-family="sans-serif">1</text>
+<circle cx="315.0" cy="260.0" r="4" fill="#e74c3c" />
+<text x="315.0" y="250.0" font-size="11" text-anchor="middle" fill="#1a2332" font-family="sans-serif">2</text>
+<circle cx="315.0" cy="40.0" r="4" fill="#e74c3c" />
+<text x="315.0" y="30.0" font-size="11" text-anchor="middle" fill="#1a2332" font-family="sans-serif">3</text>
+<circle cx="40.0" cy="40.0" r="4" fill="#e74c3c" />
+<text x="40.0" y="30.0" font-size="11" text-anchor="middle" fill="#1a2332" font-family="sans-serif">4</text>
+<circle cx="40.0" cy="260.0" r="4" fill="#e74c3c" />
+<text x="40.0" y="250.0" font-size="11" text-anchor="middle" fill="#1a2332" font-family="sans-serif">1</text>
+</svg>
+<footer>COGOpro &mdash; 2026-02-16 07:43:33</footer>
+</body>
+</html>

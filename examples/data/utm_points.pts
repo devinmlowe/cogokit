@@ -1,0 +1,5 @@
+# Control points for CRS conversion example (UTM Zone 15N, NAD83)
+# Point  Northing     Easting      Elevation  Description
+201 3650000.000 500000.000 215.40 CP_1
+202 3650150.000 500250.000 218.75 CP_2
+203 3650300.000 500100.000 212.30 CP_3
