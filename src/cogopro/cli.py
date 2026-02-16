@@ -20,6 +20,21 @@ from cogopro.surveying.workflow import TraverseWorkflow
 app = typer.Typer(help="COGO+ Pro — coordinate geometry and surveying toolkit")
 
 
+@app.command()
+def tui() -> None:
+    """Launch the interactive terminal user interface."""
+    try:
+        from cogopro.tui import run
+    except ImportError:
+        typer.echo(
+            "The TUI requires the 'textual' package.\n"
+            "Install it with: pip install cogopro[tui]",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    run()
+
+
 @app.command("inverse")
 def inverse_cmd(
     n1: float = typer.Argument(..., help="Northing of point 1"),
