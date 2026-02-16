@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Horizontal Curve Report</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    max-width: 800px; margin: 0 auto; padding: 24px;
+    color: #1a2332; background: #fff; line-height: 1.5;
+}
+h1 { font-size: 1.5rem; margin-bottom: 4px; color: #1a2332; }
+h2 { font-size: 1.15rem; margin: 20px 0 8px; color: #1a2332;
+     border-bottom: 2px solid #e0e0e0; padding-bottom: 4px; }
+.subtitle { color: #666; font-size: 0.85rem; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; }
+th { background: #2c3e50; color: #fff; text-align: left;
+     padding: 8px 10px; font-weight: 600; font-size: 0.85rem; }
+td { padding: 6px 10px; font-size: 0.85rem; border-bottom: 1px solid #e0e0e0; }
+tr:nth-child(even) td { background: #f8f9fa; }
+tr:nth-child(odd)  td { background: #fff; }
+.mono { font-family: "SF Mono", "Fira Code", "Consolas", monospace; }
+.right { text-align: right; }
+.center { text-align: center; }
+.summary-box { background: #f0f4f8; border-left: 4px solid #2c3e50;
+               padding: 12px 16px; margin: 12px 0; border-radius: 0 4px 4px 0; }
+.summary-box dt { font-weight: 600; display: inline; }
+.summary-box dd { display: inline; margin-left: 4px; }
+.summary-box dl { margin: 0; }
+.summary-box .row { margin: 4px 0; }
+.pass { color: #27ae60; font-weight: 700; }
+.fail { color: #e74c3c; font-weight: 700; }
+.bold { font-weight: 700; }
+svg { display: block; margin: 12px auto; }
+footer { margin-top: 24px; padding-top: 8px;
+         border-top: 1px solid #e0e0e0; font-size: 0.75rem; color: #999; }
+@media print {
+    body { padding: 0; }
+    .no-print { display: none; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr:nth-child(even) td {
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+}
+</style>
+</head>
+<body>
+<h1>Horizontal Curve Report</h1>
+<p class="subtitle">Generated 2026-02-16 07:42:43 by COGOpro</p>
+<h2>Input Parameters</h2>
+<table>
+<tr><th>Parameter</th><th class="right">Value</th></tr>
+<tr><td class="bold">R</td><td class="right mono">750.0000</td></tr>
+<tr><td class="bold">delta</td><td class="right mono">28°18'05.40&quot;</td></tr>
+</table>
+<h2>Curve Elements</h2>
+<table>
+<tr><th>Element</th><th class="right">Value</th></tr>
+<tr><td>R (Radius)</td><td class="right mono">750.0000</td></tr>
+<tr><td>Delta (Central Angle)</td><td class="right mono">28°18'05.40&quot;</td></tr>
+<tr><td>T (Tangent Length)</td><td class="right mono">189.0934</td></tr>
+<tr><td>L (Arc Length)</td><td class="right mono">370.4658</td></tr>
+<tr><td>C (Long Chord)</td><td class="right mono">366.7110</td></tr>
+<tr><td>E (External Distance)</td><td class="right mono">23.4703</td></tr>
+<tr><td>M (Middle Ordinate)</td><td class="right mono">22.7581</td></tr>
+<tr><td>D (Degree of Curve)</td><td class="right mono">7.639437</td></tr>
+</table>
+<h2>Diagram</h2>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+<rect width="400" height="300" fill="#fafbfc" rx="4" />
+<path d="M 225.7 158.2 A 105.0 105.0 0 0 0 174.3 158.2" fill="none" stroke="#2c3e50" stroke-width="3" />
+<circle cx="174.3" cy="158.2" r="5" fill="#2c3e50" />
+<circle cx="225.7" cy="158.2" r="5" fill="#e74c3c" />
+<text x="159.3" y="148.2" font-size="11" text-anchor="middle" fill="#1a2332" font-family="sans-serif">PC</text>
+<text x="240.7" y="148.2" font-size="11" text-anchor="middle" fill="#1a2332" font-family="sans-serif">PT</text>
+<line x1="200.0" y1="151.7" x2="174.3" y2="158.2" stroke="#999" stroke-width="1" />
+<line x1="200.0" y1="151.7" x2="225.7" y2="158.2" stroke="#999" stroke-width="1" />
+<circle cx="200.0" cy="151.7" r="4" fill="#f39c12" />
+<text x="200.0" y="141.7" font-size="11" text-anchor="middle" fill="#f39c12" font-family="sans-serif">PI</text>
+<line x1="200.0" y1="260.0" x2="174.3" y2="158.2" stroke="#ddd" stroke-width="1" />
+<text x="205.0" y="274.0" font-size="10" text-anchor="middle" fill="#999" font-family="sans-serif">O</text>
+</svg>
+<footer>COGOpro &mdash; 2026-02-16 07:42:43</footer>
+</body>
+</html>
