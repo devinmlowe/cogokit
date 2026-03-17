@@ -30,7 +30,6 @@ class GraphLineVM:
     xs: list[float] = field(default_factory=list)
     ys: list[float] = field(default_factory=list)
     label: str = ""
-    # TODO: implement line rendering in GraphWidget (see GH issue)
 
 
 @dataclass

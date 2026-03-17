@@ -1,6 +1,7 @@
 """Tests for graph view-model construction."""
 
 from cogokit.core.job import Job
+from cogokit.core.linestring import LineString
 from cogokit.core.point import Point
 from cogokit.tui.viewmodels.graph_vm import build_graph_vm
 
@@ -74,3 +75,58 @@ class TestBuildGraphVM:
         job = self._make_job_with_points()
         vm = build_graph_vm(job)
         assert vm.lines == []
+
+
+class TestGraphVMLineStrings:
+    """Test linestring resolution in build_graph_vm."""
+
+    def _make_triangle_job(self) -> Job:
+        job = Job()
+        job.add_point(Point(northing=0.0, easting=0.0, number=1))
+        job.add_point(Point(northing=100.0, easting=0.0, number=2))
+        job.add_point(Point(northing=100.0, easting=100.0, number=3))
+        return job
+
+    def test_linestring_resolution(self):
+        job = self._make_triangle_job()
+        job.add_linestring(LineString(name="line", point_numbers=(1, 2, 3)))
+        vm = build_graph_vm(job)
+        assert len(vm.lines) == 1
+        line = vm.lines[0]
+        assert line.xs == [0.0, 0.0, 100.0]
+        assert line.ys == [0.0, 100.0, 100.0]
+        assert line.label == "line"
+
+    def test_linestring_closed_loop(self):
+        job = self._make_triangle_job()
+        job.add_linestring(LineString(name="parcel", point_numbers=(1, 2, 3), closed=True))
+        vm = build_graph_vm(job)
+        assert len(vm.lines) == 1
+        line = vm.lines[0]
+        # Closed loop appends first point at end
+        assert line.xs == [0.0, 0.0, 100.0, 0.0]
+        assert line.ys == [0.0, 100.0, 100.0, 0.0]
+
+    def test_linestring_missing_points(self):
+        job = self._make_triangle_job()
+        # Point 99 does not exist — should be skipped
+        job.add_linestring(LineString(name="partial", point_numbers=(1, 99, 3)))
+        vm = build_graph_vm(job)
+        assert len(vm.lines) == 1
+        line = vm.lines[0]
+        assert line.xs == [0.0, 100.0]
+        assert line.ys == [0.0, 100.0]
+
+    def test_linestring_all_missing_points(self):
+        job = Job()
+        job.add_linestring(LineString(name="empty", point_numbers=(99, 100)))
+        vm = build_graph_vm(job)
+        # Fewer than 2 resolved points — line omitted
+        assert len(vm.lines) == 0
+
+    def test_multiple_linestrings(self):
+        job = self._make_triangle_job()
+        job.add_linestring(LineString(name="a", point_numbers=(1, 2)))
+        job.add_linestring(LineString(name="b", point_numbers=(2, 3)))
+        vm = build_graph_vm(job)
+        assert len(vm.lines) == 2

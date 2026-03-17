@@ -22,7 +22,6 @@ class LineString:
     point_numbers: tuple[int, ...]
     closed: bool = False
 
-    # TODO: Job SQLite persistence and CRUD — see GitHub issue
     # TODO: resolve_points(job) method to return actual Point objects
     # TODO: WKT / GeoJSON export
 
