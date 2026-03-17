@@ -30,7 +30,6 @@ class GraphLineVM:
     xs: list[float] = field(default_factory=list)
     ys: list[float] = field(default_factory=list)
     label: str = ""
-    # TODO: implement line rendering in GraphWidget (see GH issue)
 
 
 @dataclass
@@ -63,4 +62,20 @@ def build_graph_vm(job: Job, selected_numbers: set[int] | None = None) -> GraphV
             )
         )
 
-    return GraphViewModel(points=points)
+    # Resolve linestrings to coordinate sequences
+    lines: list[GraphLineVM] = []
+    for ls in job.linestrings():
+        xs: list[float] = []
+        ys: list[float] = []
+        for pn in ls.point_numbers:
+            pt = job.get_point(pn)
+            if pt is not None:
+                xs.append(pt.easting)
+                ys.append(pt.northing)
+        if len(xs) >= 2:
+            if ls.closed and len(xs) >= 3:
+                xs.append(xs[0])
+                ys.append(ys[0])
+            lines.append(GraphLineVM(xs=xs, ys=ys, label=ls.name))
+
+    return GraphViewModel(points=points, lines=lines)

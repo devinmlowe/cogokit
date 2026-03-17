@@ -5,6 +5,7 @@ import math
 import pytest
 
 from cogokit.core.job import Job
+from cogokit.core.linestring import LineString
 from cogokit.core.point import Point
 from cogokit.core.units import AngularUnit, LinearUnit
 
@@ -218,3 +219,94 @@ class TestJobMetadata:
         assert job.name == "Untitled"
         job.name = "NewName"
         assert job.name == "NewName"
+
+
+class TestJobLineStrings:
+    """Test linestring CRUD operations."""
+
+    def test_add_linestring(self):
+        job = Job()
+        ls = LineString(name="boundary", point_numbers=(1, 2, 3), closed=True)
+        job.add_linestring(ls)
+        assert job.linestring_count == 1
+
+    def test_get_linestring(self):
+        job = Job()
+        ls = LineString(name="road", point_numbers=(10, 20, 30))
+        job.add_linestring(ls)
+        result = job.get_linestring("road")
+        assert result is not None
+        assert result.name == "road"
+        assert result.point_numbers == (10, 20, 30)
+        assert result.closed is False
+
+    def test_get_linestring_not_found(self):
+        job = Job()
+        assert job.get_linestring("nonexistent") is None
+
+    def test_remove_linestring(self):
+        job = Job()
+        ls = LineString(name="fence", point_numbers=(1, 2))
+        job.add_linestring(ls)
+        assert job.remove_linestring("fence") is True
+        assert job.linestring_count == 0
+        assert job.get_linestring("fence") is None
+
+    def test_remove_linestring_not_found(self):
+        job = Job()
+        assert job.remove_linestring("nope") is False
+
+    def test_linestrings_list(self):
+        job = Job()
+        job.add_linestring(LineString(name="c_line", point_numbers=(3,)))
+        job.add_linestring(LineString(name="a_line", point_numbers=(1,)))
+        job.add_linestring(LineString(name="b_line", point_numbers=(2,)))
+        names = [ls.name for ls in job.linestrings()]
+        assert names == ["a_line", "b_line", "c_line"]
+
+    def test_linestring_count(self):
+        job = Job()
+        assert job.linestring_count == 0
+        job.add_linestring(LineString(name="ls1", point_numbers=(1, 2)))
+        assert job.linestring_count == 1
+        job.add_linestring(LineString(name="ls2", point_numbers=(3, 4)))
+        assert job.linestring_count == 2
+
+    def test_has_linestring(self):
+        job = Job()
+        job.add_linestring(LineString(name="edge", point_numbers=(1, 2)))
+        assert job.has_linestring("edge") is True
+        assert job.has_linestring("missing") is False
+
+    def test_linestring_closed_flag(self):
+        job = Job()
+        job.add_linestring(LineString(name="open", point_numbers=(1, 2), closed=False))
+        job.add_linestring(LineString(name="closed", point_numbers=(1, 2, 3), closed=True))
+        assert job.get_linestring("open").closed is False
+        assert job.get_linestring("closed").closed is True
+
+    def test_linestring_duplicate_name(self):
+        job = Job()
+        job.add_linestring(LineString(name="dup", point_numbers=(1, 2)))
+        job.add_linestring(LineString(name="dup", point_numbers=(3, 4, 5), closed=True))
+        assert job.linestring_count == 1
+        result = job.get_linestring("dup")
+        assert result.point_numbers == (3, 4, 5)
+        assert result.closed is True
+
+    def test_linestring_persistence(self, tmp_path):
+        db = str(tmp_path / "ls.db")
+        job = Job(db_path=db)
+        job.add_linestring(LineString(name="road", point_numbers=(1, 2, 3), closed=False))
+        job.add_linestring(LineString(name="parcel", point_numbers=(10, 20, 30), closed=True))
+        job.close()
+
+        job2 = Job(db_path=db)
+        assert job2.linestring_count == 2
+        road = job2.get_linestring("road")
+        assert road.point_numbers == (1, 2, 3)
+        assert road.closed is False
+        parcel = job2.get_linestring("parcel")
+        assert parcel.point_numbers == (10, 20, 30)
+        assert parcel.closed is True
+        job2.close()
