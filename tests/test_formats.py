@@ -4,10 +4,10 @@ import math
 import re
 from pathlib import Path
 
-from cogopro.core.crs import CRS
-from cogopro.core.job import Job
-from cogopro.core.point import Point
-from cogopro.io.formats import export_dxf, export_dxf_lines, export_dxf_polyline, export_kml
+from cogokit.core.crs import CRS
+from cogokit.core.job import Job
+from cogokit.core.point import Point
+from cogokit.io.formats import export_dxf, export_dxf_lines, export_dxf_polyline, export_kml
 
 
 def _make_job():
@@ -396,7 +396,7 @@ class TestExportKml:
 
     def test_kml_utm_job_transforms_to_latlon(self, tmp_path: Path):
         """UTM coordinates should be transformed to WGS84 lat/lon degrees."""
-        from cogopro.geodetic.projections import geodetic_to_utm
+        from cogokit.geodetic.projections import geodetic_to_utm
 
         # Known: Toronto is ~43.65N, ~79.38W -> UTM Zone 17N
         lat_rad = math.radians(43.6532)
@@ -448,7 +448,7 @@ class TestExportKml:
 
     def test_kml_crs_parameter_overrides_job_crs(self, tmp_path: Path):
         """The crs parameter should override job.crs."""
-        from cogopro.geodetic.projections import geodetic_to_utm
+        from cogokit.geodetic.projections import geodetic_to_utm
 
         lat_rad = math.radians(43.6532)
         lon_rad = math.radians(-79.3832)
@@ -475,7 +475,7 @@ class TestExportKml:
 
     def test_kml_multiple_utm_points(self, tmp_path: Path):
         """Multiple UTM points should all be transformed correctly."""
-        from cogopro.geodetic.projections import geodetic_to_utm
+        from cogokit.geodetic.projections import geodetic_to_utm
 
         locations = [
             (43.6532, -79.3832, "Toronto"),
@@ -505,6 +505,6 @@ class TestExportKml:
     def test_kml_no_todo_comment(self, tmp_path: Path):
         """The TODO comment should be removed from the export_kml function."""
         import inspect
-        from cogopro.io.formats import export_kml as fn
+        from cogokit.io.formats import export_kml as fn
         source = inspect.getsource(fn)
         assert "TODO" not in source

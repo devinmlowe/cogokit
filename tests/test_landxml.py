@@ -5,10 +5,10 @@ import math
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from cogopro.core.job import Job
-from cogopro.core.point import Point
-from cogopro.io.landxml import export_landxml, import_landxml
-from cogopro.surveying.alignment import (
+from cogokit.core.job import Job
+from cogokit.core.point import Point
+from cogokit.io.landxml import export_landxml, import_landxml
+from cogokit.surveying.alignment import (
     CircularCurve,
     HorizontalAlignment,
     Tangent,

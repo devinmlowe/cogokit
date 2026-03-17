@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from cogopro.geodetic.ellipsoid import GRS80
+from cogokit.geodetic.ellipsoid import GRS80
 
 
 class TestOMercForward:
@@ -12,7 +12,7 @@ class TestOMercForward:
 
     def test_on_center_returns_false_origin(self):
         """Point at projection center should map near false origin."""
-        from cogopro.geodetic.projections import omerc_forward
+        from cogokit.geodetic.projections import omerc_forward
 
         result = omerc_forward(
             lat=math.radians(57.0),
@@ -45,7 +45,7 @@ class TestOMercRoundTrip:
         ],
     )
     def test_round_trip_alaska_zone1(self, lat_deg, lon_deg):
-        from cogopro.geodetic.projections import omerc_forward, omerc_inverse
+        from cogokit.geodetic.projections import omerc_forward, omerc_inverse
 
         lat = math.radians(lat_deg)
         lon = math.radians(lon_deg)

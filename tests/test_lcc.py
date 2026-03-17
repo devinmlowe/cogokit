@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from cogopro.geodetic.ellipsoid import GRS80
+from cogokit.geodetic.ellipsoid import GRS80
 
 
 class TestLCCForward:
@@ -12,7 +12,7 @@ class TestLCCForward:
 
     def test_on_origin_returns_false_origin(self):
         """Point at (lat_0, lon_0) should map to (x_0, y_0)."""
-        from cogopro.geodetic.projections import lcc_forward
+        from cogokit.geodetic.projections import lcc_forward
 
         result = lcc_forward(
             lat=math.radians(33.5),
@@ -30,7 +30,7 @@ class TestLCCForward:
 
     def test_on_central_meridian(self):
         """Point on central meridian should have easting == false_easting."""
-        from cogopro.geodetic.projections import lcc_forward
+        from cogokit.geodetic.projections import lcc_forward
 
         result = lcc_forward(
             lat=math.radians(34.5),
@@ -53,7 +53,7 @@ class TestLCCForward:
         E=1855879 N=579656 (NAD83, meters, EPSG:26945).
         Tolerance: 1 meter (accounts for minor parameter rounding).
         """
-        from cogopro.geodetic.projections import lcc_forward
+        from cogokit.geodetic.projections import lcc_forward
 
         result = lcc_forward(
             lat=math.radians(34.0522),
@@ -72,7 +72,7 @@ class TestLCCForward:
 
     def test_convergence_zero_on_central_meridian(self):
         """Grid convergence should be zero on the central meridian."""
-        from cogopro.geodetic.projections import lcc_forward
+        from cogokit.geodetic.projections import lcc_forward
 
         result = lcc_forward(
             lat=math.radians(34.5),
@@ -89,7 +89,7 @@ class TestLCCForward:
 
     def test_scale_near_unity_on_standard_parallel(self):
         """Scale factor should be ~1.0 on a standard parallel."""
-        from cogopro.geodetic.projections import lcc_forward
+        from cogokit.geodetic.projections import lcc_forward
 
         result = lcc_forward(
             lat=math.radians(34.0333333333333),  # lat_2
@@ -110,7 +110,7 @@ class TestLCCInverse:
 
     def test_false_origin_returns_lat0_lon0(self):
         """(x_0, y_0) should invert to (lat_0, lon_0)."""
-        from cogopro.geodetic.projections import lcc_inverse
+        from cogokit.geodetic.projections import lcc_inverse
 
         result = lcc_inverse(
             easting=2000000.0,
@@ -140,7 +140,7 @@ class TestLCCRoundTrip:
         ],
     )
     def test_round_trip_california_zone5(self, lat_deg, lon_deg):
-        from cogopro.geodetic.projections import lcc_forward, lcc_inverse
+        from cogokit.geodetic.projections import lcc_forward, lcc_inverse
 
         lat = math.radians(lat_deg)
         lon = math.radians(lon_deg)
@@ -170,7 +170,7 @@ class TestLCCRoundTrip:
         ],
     )
     def test_round_trip_texas_central(self, lat_deg, lon_deg):
-        from cogopro.geodetic.projections import lcc_forward, lcc_inverse
+        from cogokit.geodetic.projections import lcc_forward, lcc_inverse
 
         lat = math.radians(lat_deg)
         lon = math.radians(lon_deg)

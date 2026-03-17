@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from cogopro.core import Point
-from cogopro.solvers.horizontal_curve import (
+from cogokit.core import Point
+from cogokit.solvers.horizontal_curve import (
     CurveElements,
     solve_curve,
     spiral,

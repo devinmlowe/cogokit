@@ -13,10 +13,10 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_TUI, reason="textual not installed")
 
 if HAS_TUI:
-    from cogopro.config.loader import reset_config_cache
-    from cogopro.core.job import Job
-    from cogopro.tui.screens.point_manager import PointManagerScreen
-    from cogopro.tui.widgets.context_footer import ContextFooter
+    from cogokit.config.loader import reset_config_cache
+    from cogokit.core.job import Job
+    from cogokit.tui.screens.point_manager import PointManagerScreen
+    from cogokit.tui.widgets.context_footer import ContextFooter
 
     class PMTestApp(App):
         def __init__(self) -> None:

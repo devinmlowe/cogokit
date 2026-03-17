@@ -13,19 +13,19 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_TUI, reason="textual not installed")
 
 if HAS_TUI:
-    from cogopro.config import get_config, reload_config
-    from cogopro.config.loader import reset_config_cache
-    from cogopro.core.job import Job
-    from cogopro.core.units import AngularUnit, LinearUnit
-    from cogopro.tui.app import COGOProApp, _ANGULAR_MAP, _LINEAR_MAP
-    from cogopro.tui.widgets.context_footer import ContextFooter
+    from cogokit.config import get_config, reload_config
+    from cogokit.config.loader import reset_config_cache
+    from cogokit.core.job import Job
+    from cogokit.core.units import AngularUnit, LinearUnit
+    from cogokit.tui.app import CogoKitApp, _ANGULAR_MAP, _LINEAR_MAP
+    from cogokit.tui.widgets.context_footer import ContextFooter
 
 
 @pytest.mark.asyncio
 async def test_apply_config_theme():
     """Theme change via apply_config updates app.theme."""
     reset_config_cache()
-    app = COGOProApp()
+    app = CogoKitApp()
     async with app.run_test():
         cfg = get_config()
         cfg.set("display.theme", "light")
@@ -38,7 +38,7 @@ async def test_apply_config_theme():
 async def test_apply_config_units():
     """Unit change via apply_config updates Job units."""
     reset_config_cache()
-    app = COGOProApp()
+    app = CogoKitApp()
     async with app.run_test():
         cfg = get_config()
         cfg.set("units.linear", "meter")
@@ -51,7 +51,7 @@ async def test_apply_config_units():
 async def test_apply_config_no_change():
     """No changes produces no messages."""
     reset_config_cache()
-    app = COGOProApp()
+    app = CogoKitApp()
     async with app.run_test():
         messages = app.apply_config()
         assert messages == []
@@ -61,9 +61,9 @@ async def test_apply_config_no_change():
 async def test_apply_config_keybinding_change_warns():
     """Keybinding changes produce a restart warning."""
     reset_config_cache()
-    app = COGOProApp()
+    app = CogoKitApp()
     async with app.run_test():
-        from cogopro.config.keybindings import DEFAULT_BINDINGS
+        from cogokit.config.keybindings import DEFAULT_BINDINGS
 
         old = dict(DEFAULT_BINDINGS)
         # Simulate a change

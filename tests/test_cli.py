@@ -5,7 +5,7 @@ import math
 import pytest
 from typer.testing import CliRunner
 
-from cogopro.cli import app
+from cogokit.cli import app
 
 runner = CliRunner()
 
@@ -212,13 +212,13 @@ class TestConvertStatePlane:
         assert result.exit_code == 0
 
     def test_parse_crs_epsg(self):
-        from cogopro.cli import _parse_crs
+        from cogokit.cli import _parse_crs
         crs = _parse_crs("epsg:26945")
         assert crs is not None
         assert crs.kind == "projected"
 
     def test_parse_crs_sp_state_zone(self):
-        from cogopro.cli import _parse_crs
+        from cogokit.cli import _parse_crs
         crs = _parse_crs("sp:CA:5")
         assert crs is not None
         assert crs.kind == "projected"
@@ -228,4 +228,4 @@ class TestTopLevel:
     def test_help(self):
         result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
-        assert "COGO" in result.output
+        assert "cogokit" in result.output

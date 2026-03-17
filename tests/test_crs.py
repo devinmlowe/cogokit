@@ -4,10 +4,10 @@ import math
 
 import pytest
 
-from cogopro.core import Job, Point
-from cogopro.core.crs import CRS, transform_job, transform_point
-from cogopro.geodetic.ellipsoid import GRS80, WGS84
-from cogopro.geodetic.projections import geodetic_to_utm, utm_to_geodetic
+from cogokit.core import Job, Point
+from cogokit.core.crs import CRS, transform_job, transform_point
+from cogokit.geodetic.ellipsoid import GRS80, WGS84
+from cogokit.geodetic.projections import geodetic_to_utm, utm_to_geodetic
 
 
 class TestCRSCreation:
@@ -69,13 +69,13 @@ class TestCRSConstants:
     """Test predefined CRS constants."""
 
     def test_wgs84_geo(self):
-        from cogopro.core.crs import WGS84_GEO
+        from cogokit.core.crs import WGS84_GEO
 
         assert WGS84_GEO.kind == "geodetic"
         assert WGS84_GEO.ellipsoid is WGS84
 
     def test_nad83_geo(self):
-        from cogopro.core.crs import NAD83_GEO
+        from cogokit.core.crs import NAD83_GEO
 
         assert NAD83_GEO.kind == "geodetic"
         assert NAD83_GEO.ellipsoid is GRS80
@@ -244,7 +244,7 @@ class TestTransformJob:
 
     def test_transform_job_preserves_metadata(self):
         """Job metadata (name, description, units) should be preserved."""
-        from cogopro.core.units import AngularUnit, LinearUnit
+        from cogokit.core.units import AngularUnit, LinearUnit
 
         job = Job(name="My Survey", description="Test job",
                   linear_unit=LinearUnit.METER, angular_unit=AngularUnit.DMS)

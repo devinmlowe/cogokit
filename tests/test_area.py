@@ -2,8 +2,8 @@
 
 import math
 
-from cogopro.cogo import Point
-from cogopro.cogo.area import polygon_area, polygon_perimeter
+from cogokit.cogo import Point
+from cogokit.cogo.area import polygon_area, polygon_perimeter
 
 
 def test_area_unit_square():

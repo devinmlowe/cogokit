@@ -13,8 +13,8 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_TUI, reason="textual not installed")
 
 if HAS_TUI:
-    from cogopro.config.loader import reset_config_cache
-    from cogopro.tui.widgets.context_footer import ContextFooter
+    from cogokit.config.loader import reset_config_cache
+    from cogokit.tui.widgets.context_footer import ContextFooter
 
     class FooterTestApp(App):
         def compose(self) -> ComposeResult:

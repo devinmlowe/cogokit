@@ -4,9 +4,9 @@ import io
 import math
 from pathlib import Path
 
-from cogopro.core.job import Job
-from cogopro.core.point import Point
-from cogopro.io.csv_io import read_csv, write_csv
+from cogokit.core.job import Job
+from cogokit.core.point import Point
+from cogokit.io.csv_io import read_csv, write_csv
 
 
 def _make_job():

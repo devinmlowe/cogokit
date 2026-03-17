@@ -2,7 +2,7 @@
 
 import math
 
-from cogopro.core import Angle, Point
+from cogokit.core import Angle, Point
 
 
 class TestPointCreation:

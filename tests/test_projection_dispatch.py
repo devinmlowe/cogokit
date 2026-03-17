@@ -4,15 +4,15 @@ import math
 
 import pytest
 
-from cogopro.geodetic.ellipsoid import GRS80
+from cogokit.geodetic.ellipsoid import GRS80
 
 
 class TestProjectionForward:
     """Test dispatch to correct forward projection."""
 
     def test_tmerc_dispatch(self):
-        from cogopro.geodetic.proj4 import parse_proj4
-        from cogopro.geodetic.projections import projection_forward
+        from cogokit.geodetic.proj4 import parse_proj4
+        from cogokit.geodetic.projections import projection_forward
 
         pdef = parse_proj4(
             "+proj=tmerc +lat_0=38.8333333333333 +lon_0=-74.5 "
@@ -23,8 +23,8 @@ class TestProjectionForward:
         assert result.northing > 0
 
     def test_lcc_dispatch(self):
-        from cogopro.geodetic.proj4 import parse_proj4
-        from cogopro.geodetic.projections import projection_forward
+        from cogokit.geodetic.proj4 import parse_proj4
+        from cogokit.geodetic.projections import projection_forward
 
         pdef = parse_proj4(
             "+proj=lcc +lat_0=33.5 +lon_0=-118 +lat_1=35.4666666666667 "
@@ -34,8 +34,8 @@ class TestProjectionForward:
         assert math.isclose(result.easting, 2000000.0, abs_tol=1.0)
 
     def test_omerc_dispatch(self):
-        from cogopro.geodetic.proj4 import parse_proj4
-        from cogopro.geodetic.projections import projection_forward
+        from cogokit.geodetic.proj4 import parse_proj4
+        from cogokit.geodetic.projections import projection_forward
 
         pdef = parse_proj4(
             "+proj=omerc +lat_0=57 +lonc=-133.666666666667 "
@@ -50,8 +50,8 @@ class TestProjectionInverse:
     """Test dispatch to correct inverse projection."""
 
     def test_round_trip_tmerc(self):
-        from cogopro.geodetic.proj4 import parse_proj4
-        from cogopro.geodetic.projections import projection_forward, projection_inverse
+        from cogokit.geodetic.proj4 import parse_proj4
+        from cogokit.geodetic.projections import projection_forward, projection_inverse
 
         pdef = parse_proj4(
             "+proj=tmerc +lat_0=38.8333333333333 +lon_0=-74.5 "
@@ -64,8 +64,8 @@ class TestProjectionInverse:
         assert math.isclose(inv.lon, lon, abs_tol=1e-10)
 
     def test_unsupported_proj_type_raises(self):
-        from cogopro.geodetic.proj4 import ProjectionDef
-        from cogopro.geodetic.projections import projection_forward
+        from cogokit.geodetic.proj4 import ProjectionDef
+        from cogokit.geodetic.projections import projection_forward
 
         pdef = ProjectionDef(proj_type="merc")
         with pytest.raises(ValueError, match="Unsupported"):

@@ -13,9 +13,9 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_TUI, reason="textual not installed")
 
 if HAS_TUI:
-    from cogopro.core.job import Job
-    from cogopro.tui.screens.point_manager import PointManagerScreen
-    from cogopro.tui.widgets.graph_widget import GraphWidget
+    from cogokit.core.job import Job
+    from cogokit.tui.screens.point_manager import PointManagerScreen
+    from cogokit.tui.widgets.graph_widget import GraphWidget
 
     class PMTestApp(App):
         """Minimal app wrapping PointManagerScreen for testing."""
@@ -44,7 +44,7 @@ async def test_point_manager_mounts_with_graph():
 @pytest.mark.asyncio
 async def test_graph_updates_on_point_add():
     """Adding a point updates the graph view model."""
-    from cogopro.core.point import Point
+    from cogokit.core.point import Point
 
     app = PMTestApp()
     async with app.run_test():

@@ -2,7 +2,7 @@
 
 import math
 
-from cogopro.geodetic.ellipsoid import (
+from cogokit.geodetic.ellipsoid import (
     AIRY_1830,
     AUSTRALIAN_NATIONAL,
     BESSEL_1841,

@@ -1,8 +1,8 @@
 """Tests for graph view-model construction."""
 
-from cogopro.core.job import Job
-from cogopro.core.point import Point
-from cogopro.tui.viewmodels.graph_vm import build_graph_vm
+from cogokit.core.job import Job
+from cogokit.core.point import Point
+from cogokit.tui.viewmodels.graph_vm import build_graph_vm
 
 
 class TestBuildGraphVM:
