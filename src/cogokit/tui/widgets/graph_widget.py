@@ -9,7 +9,7 @@ from textual.reactive import reactive
 
 from textual_plotext import PlotextPlot
 
-from cogokit.tui.viewmodels.graph_vm import GraphPointVM, GraphViewModel
+from cogokit.tui.viewmodels.graph_vm import GraphLineVM, GraphPointVM, GraphViewModel
 
 
 class GraphWidget(PlotextPlot):
@@ -107,6 +107,12 @@ class GraphWidget(PlotextPlot):
                 marker=self.SELECTED_MARKER,
                 color=self.SELECTED_COLOR,
             )
+
+        # Lines (linestrings)
+        LINE_COLOR = "white"
+        for line in vm.lines:
+            if len(line.xs) >= 2:
+                plt.plot(line.xs, line.ys, color=LINE_COLOR)
 
         # Labels
         if self.label_mode < 2:
