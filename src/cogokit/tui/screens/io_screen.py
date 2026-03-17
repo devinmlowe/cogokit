@@ -86,7 +86,8 @@ class LoadPointsScreen(Screen):
 
             if fmt == "landxml":
                 from cogokit.io.landxml import import_landxml
-                loaded_job = import_landxml(p)
+                result = import_landxml(p)
+                loaded_job = result.job
             else:
                 from cogokit.io import read_points
                 loaded_job = read_points(p)
