@@ -219,6 +219,8 @@ class PointManagerScreen(Screen):
         table.add_columns("Pt#", "Northing", "Easting", "Elevation", "Description")
         table.cursor_type = "row"
         self._refresh_table()
+        # Pre-populate the number field with next available point number
+        self.query_one("#add-number", Input).value = str(self._next_point_number())
 
     def on_screen_resume(self) -> None:
         """Re-sync when returning from another screen."""
@@ -285,6 +287,22 @@ class PointManagerScreen(Screen):
             return
         vm = build_graph_vm(self.app.current_job, self._selected_point_numbers)
         graph.view_model = vm
+
+    # -- Auto-advance helpers ------------------------------------------
+
+    def _next_point_number(self) -> int:
+        """Return next logical point number (max existing + 1, or 1 if empty)."""
+        numbers = self.app.current_job.point_numbers()
+        return max(numbers) + 1 if numbers else 1
+
+    def _clear_and_advance(self) -> None:
+        """Clear input fields and set number to next available point number."""
+        self.query_one("#add-number", Input).value = str(self._next_point_number())
+        self.query_one("#add-north", Input).value = ""
+        self.query_one("#add-east", Input).value = ""
+        self.query_one("#add-elev", Input).value = ""
+        self.query_one("#add-desc", Input).value = ""
+        self.query_one("#add-number", Input).focus()
 
     # -- Status --------------------------------------------------------
 
@@ -390,10 +408,10 @@ class PointManagerScreen(Screen):
             description=desc,
         )
         self.app.current_job.add_point(pt)
-        if number is not None:
-            self._selected_point_numbers = {number}
+        self._selected_point_numbers = set()
         self._refresh_table()
         self._set_status(f"Point {number} added")
+        self._clear_and_advance()
 
     def _remove_selected(self) -> None:
         table = self.query_one("#point-table", DataTable)
