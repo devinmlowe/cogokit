@@ -16,7 +16,7 @@ cogopro-tui = "cogopro.tui:run"
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
 lsa = ["numpy>=1.24"]
-tui = ["textual>=0.75"]
+tui = ["textual>=0.75", "textual-plotext>=1.0"]
 
 [tool.setuptools.package-data]
 cogopro = ["data/*.json"]
