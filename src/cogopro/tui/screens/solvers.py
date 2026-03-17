@@ -19,7 +19,7 @@ from cogopro.tui.widgets.result_panel import ResultPanel
 class TriangleScreen(Screen):
     """Solve a triangle given sides and/or angles."""
 
-    FOOTER_HINTS = "Enter Solve | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Solve | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     TriangleScreen { layout: vertical; }
@@ -142,7 +142,7 @@ class TriangleScreen(Screen):
 class HorizontalCurveScreen(Screen):
     """Solve a horizontal curve from any two elements."""
 
-    FOOTER_HINTS = "Enter Solve | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Solve | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     HorizontalCurveScreen { layout: vertical; }
@@ -239,7 +239,7 @@ class HorizontalCurveScreen(Screen):
 class VerticalCurveScreen(Screen):
     """Solve a parabolic vertical curve."""
 
-    FOOTER_HINTS = "Enter Solve | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Solve | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     VerticalCurveScreen { layout: vertical; }

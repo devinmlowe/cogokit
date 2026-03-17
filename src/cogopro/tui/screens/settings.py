@@ -101,7 +101,7 @@ class KeyCaptureModal(ModalScreen[str | None]):
 class SettingsScreen(Screen):
     """Application settings: units, display, paths, keybindings."""
 
-    FOOTER_HINTS = "Enter Edit | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Edit | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     SettingsScreen {

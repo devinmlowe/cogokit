@@ -19,7 +19,7 @@ from cogopro.tui.widgets.result_panel import ResultPanel
 class VincentyDirectScreen(Screen):
     """Compute destination point on the ellipsoid given start, azimuth, and distance."""
 
-    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Calculate | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     VincentyDirectScreen { layout: vertical; }
@@ -110,7 +110,7 @@ class VincentyDirectScreen(Screen):
 class VincentyInverseScreen(Screen):
     """Compute geodesic distance and azimuths between two points on the ellipsoid."""
 
-    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Calculate | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     VincentyInverseScreen { layout: vertical; }
@@ -201,7 +201,7 @@ class VincentyInverseScreen(Screen):
 class ConvertScreen(Screen):
     """Transform coordinates between CRS types."""
 
-    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Calculate | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     ConvertScreen { layout: vertical; }
@@ -335,7 +335,7 @@ class ConvertScreen(Screen):
 class ZonesScreen(Screen):
     """Browse and search State Plane coordinate system zones."""
 
-    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Calculate | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     ZonesScreen { layout: vertical; }

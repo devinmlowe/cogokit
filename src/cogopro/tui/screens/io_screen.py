@@ -19,7 +19,7 @@ from cogopro.tui.widgets.result_panel import ResultPanel
 class LoadPointsScreen(Screen):
     """Load points from a file into the current job."""
 
-    FOOTER_HINTS = "Enter Execute | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Execute | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     LoadPointsScreen { layout: vertical; }
@@ -119,7 +119,7 @@ class LoadPointsScreen(Screen):
 class ExportScreen(Screen):
     """Export job points to various formats."""
 
-    FOOTER_HINTS = "Enter Execute | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Execute | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     ExportScreen { layout: vertical; }

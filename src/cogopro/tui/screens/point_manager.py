@@ -35,7 +35,7 @@ class PointManagerScreen(Screen):
         Binding("ctrl+t", "cycle_labels", "Labels", show=False),
     ]
 
-    FOOTER_HINTS = "^L Layout | ^G Graph | ^T Labels | ? Help"
+    FOOTER_HINTS = "^L Layout | ^G Graph | ^T Labels | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     PointManagerScreen {
