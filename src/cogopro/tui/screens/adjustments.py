@@ -19,7 +19,7 @@ from cogopro.tui.widgets.result_panel import ResultPanel
 class CompassRuleScreen(Screen):
     """Bowditch traverse adjustment using points in the current job."""
 
-    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Calculate | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     CompassRuleScreen { layout: vertical; }
@@ -130,7 +130,7 @@ class CompassRuleScreen(Screen):
 class HelmertScreen(Screen):
     """2D similarity transformation between two point sets."""
 
-    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Calculate | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     HelmertScreen { layout: vertical; }
@@ -278,7 +278,7 @@ class HelmertScreen(Screen):
 class TransformsScreen(Screen):
     """Apply geometric transformations to job points."""
 
-    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Calculate | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     TransformsScreen { layout: vertical; }
