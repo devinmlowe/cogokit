@@ -12,6 +12,7 @@ try:
         AzimuthObservation,
         DirectionObservation,
         DistanceObservation,
+        GpsBaselineObservation,
         Network,
     )
 
@@ -39,5 +40,6 @@ if _LSA_AVAILABLE:
         "AzimuthObservation",
         "DirectionObservation",
         "DistanceObservation",
+        "GpsBaselineObservation",
         "Network",
     ]
