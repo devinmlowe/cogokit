@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, TextIO, Tuple, Union
 
@@ -18,14 +19,30 @@ _NS_PREFIX = f"{{{NS}}}"
 ET.register_namespace("", NS)
 
 
-def import_landxml(source: Union[str, Path, TextIO]) -> Job:
-    """Read CgPoints from a LandXML file into a Job.
+@dataclass
+class LandXMLResult:
+    """Result of importing a LandXML file.
+
+    Attributes:
+        job: Job populated with imported CgPoints.
+        parcels: List of (name, [Point, ...]) tuples for each imported parcel.
+        alignments: List of (name, HorizontalAlignment) tuples for each
+            imported alignment.
+    """
+
+    job: Job = field(default_factory=Job)
+    parcels: list[tuple[str, list[Point]]] = field(default_factory=list)
+    alignments: list[tuple[str, HorizontalAlignment]] = field(default_factory=list)
+
+
+def import_landxml(source: Union[str, Path, TextIO]) -> LandXMLResult:
+    """Read CgPoints, parcels, and alignments from a LandXML file.
 
     Parameters:
         source: File path or file-like object containing LandXML data.
 
     Returns:
-        A Job populated with the imported points.
+        A LandXMLResult with job, parcels, and alignments.
     """
     job = Job()
 
@@ -66,7 +83,165 @@ def import_landxml(source: Union[str, Path, TextIO]) -> Job:
             description=desc,
         ))
 
-    return job
+    parcels = _import_parcels(root)
+    alignments = _import_alignments(root)
+
+    return LandXMLResult(job=job, parcels=parcels, alignments=alignments)
+
+
+def _import_parcels(root: ET.Element) -> list[tuple[str, list[Point]]]:
+    """Parse <Parcels>/<Parcel> elements into (name, vertices) tuples."""
+    result: list[tuple[str, list[Point]]] = []
+    parcels_elem = root.find(f"{_NS_PREFIX}Parcels")
+    if parcels_elem is None:
+        return result
+
+    for parcel in parcels_elem.findall(f"{_NS_PREFIX}Parcel"):
+        name = parcel.get("name", "")
+        coord_geom = parcel.find(f"{_NS_PREFIX}CoordGeom")
+        if coord_geom is None:
+            continue
+
+        vertices: list[Point] = []
+        for line in coord_geom.findall(f"{_NS_PREFIX}Line"):
+            start_elem = line.find(f"{_NS_PREFIX}Start")
+            if start_elem is not None and start_elem.text:
+                coords = start_elem.text.strip().split()
+                if len(coords) >= 2:
+                    vertices.append(Point(
+                        northing=float(coords[0]),
+                        easting=float(coords[1]),
+                    ))
+
+        result.append((name, vertices))
+
+    return result
+
+
+def _import_alignments(root: ET.Element) -> list[tuple[str, HorizontalAlignment]]:
+    """Parse <Alignments>/<Alignment> elements into (name, HorizontalAlignment) tuples."""
+    result: list[tuple[str, HorizontalAlignment]] = []
+    aligns_elem = root.find(f"{_NS_PREFIX}Alignments")
+    if aligns_elem is None:
+        return result
+
+    for alignment in aligns_elem.findall(f"{_NS_PREFIX}Alignment"):
+        name = alignment.get("name", "")
+        sta_start = float(alignment.get("staStart", "0.0"))
+        coord_geom = alignment.find(f"{_NS_PREFIX}CoordGeom")
+        if coord_geom is None:
+            continue
+
+        elements = []
+        for child in coord_geom:
+            tag = child.tag.replace(_NS_PREFIX, "")
+            if tag == "Line":
+                elem = _import_line_element(child, sta_start, elements)
+                if elem is not None:
+                    elements.append(elem)
+            elif tag == "Curve":
+                elem = _import_curve_element(child, sta_start, elements)
+                if elem is not None:
+                    elements.append(elem)
+
+        if elements:
+            result.append((name, HorizontalAlignment(elements)))
+
+    return result
+
+
+def _parse_point(elem: ET.Element | None) -> Point | None:
+    """Parse a LandXML coordinate text element into a Point."""
+    if elem is None or not elem.text:
+        return None
+    coords = elem.text.strip().split()
+    if len(coords) < 2:
+        return None
+    return Point(northing=float(coords[0]), easting=float(coords[1]))
+
+
+def _import_line_element(
+    line_elem: ET.Element,
+    sta_start: float,
+    preceding: list,
+) -> Tangent | None:
+    """Import a LandXML <Line> as a Tangent alignment element."""
+    start_pt = _parse_point(line_elem.find(f"{_NS_PREFIX}Start"))
+    end_pt = _parse_point(line_elem.find(f"{_NS_PREFIX}End"))
+    if start_pt is None or end_pt is None:
+        return None
+
+    length = float(line_elem.get("length", "0.0"))
+    dir_deg = line_elem.get("dir")
+
+    if dir_deg is not None:
+        azimuth = math.radians(float(dir_deg))
+    else:
+        # Compute azimuth from start/end points
+        dn = end_pt.northing - start_pt.northing
+        de = end_pt.easting - start_pt.easting
+        azimuth = math.atan2(de, dn)
+        if azimuth < 0:
+            azimuth += 2 * math.pi
+
+    if length == 0.0:
+        length = math.hypot(
+            end_pt.northing - start_pt.northing,
+            end_pt.easting - start_pt.easting,
+        )
+
+    start_station = preceding[-1].end_station if preceding else sta_start
+
+    return Tangent(
+        start_station=start_station,
+        length=length,
+        azimuth=azimuth,
+        start_point=start_pt,
+    )
+
+
+def _import_curve_element(
+    curve_elem: ET.Element,
+    sta_start: float,
+    preceding: list,
+) -> CircularCurve | None:
+    """Import a LandXML <Curve> as a CircularCurve alignment element."""
+    pc_point = _parse_point(curve_elem.find(f"{_NS_PREFIX}Start"))
+    center_point = _parse_point(curve_elem.find(f"{_NS_PREFIX}Center"))
+    end_point = _parse_point(curve_elem.find(f"{_NS_PREFIX}End"))
+    if pc_point is None or center_point is None or end_point is None:
+        return None
+
+    radius = float(curve_elem.get("radius", "0.0"))
+    length = float(curve_elem.get("length", "0.0"))
+    rot = curve_elem.get("rot", "cw")
+    direction = "R" if rot == "cw" else "L"
+
+    # Compute delta from length and radius
+    delta = length / radius if radius > 0 else 0.0
+
+    # Compute start azimuth: tangent at PC is perpendicular to radial line
+    az_to_pc = math.atan2(
+        pc_point.easting - center_point.easting,
+        pc_point.northing - center_point.northing,
+    )
+    if direction == "R":
+        start_azimuth = az_to_pc + math.pi / 2
+    else:
+        start_azimuth = az_to_pc - math.pi / 2
+
+    start_station = preceding[-1].end_station if preceding else sta_start
+
+    return CircularCurve(
+        start_station=start_station,
+        length=length,
+        radius=radius,
+        delta=delta,
+        direction=direction,
+        pc_point=pc_point,
+        center_point=center_point,
+        start_azimuth=start_azimuth,
+    )
 
 
 def export_landxml(
