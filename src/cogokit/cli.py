@@ -22,6 +22,14 @@ config_app = typer.Typer(help="Manage application configuration")
 app.add_typer(config_app, name="config")
 
 
+def _fmt(value: float) -> str:
+    """Format a float using the configured decimal precision."""
+    from cogokit.config import get_config
+
+    precision = get_config().environment.decimal_precision
+    return f"{value:.{precision}f}"
+
+
 @config_app.command("list")
 def config_list() -> None:
     """Show all configuration values."""
@@ -129,10 +137,10 @@ def inverse_cmd(
     result = inverse(p1, p2)
     bearing = Angle.from_radians(result.azimuth).to_bearing_string()
     typer.echo(f"Bearing:       {bearing}")
-    typer.echo(f"Horiz. Dist:   {result.horizontal_distance:.4f}")
-    typer.echo(f"Slope Dist:    {result.slope_distance:.4f}")
-    typer.echo(f"Vert. Dist:    {result.vertical_distance:.4f}")
-    typer.echo(f"Grade:         {result.grade:.4f}%")
+    typer.echo(f"Horiz. Dist:   {_fmt(result.horizontal_distance)}")
+    typer.echo(f"Slope Dist:    {_fmt(result.slope_distance)}")
+    typer.echo(f"Vert. Dist:    {_fmt(result.vertical_distance)}")
+    typer.echo(f"Grade:         {_fmt(result.grade)}%")
     if report is not None:
         from cogokit.io.reports import report_inverse, write_report
         html = report_inverse(p1, p2, result)
@@ -153,9 +161,9 @@ def traverse_cmd(
     origin = Point(northing=n, easting=e)
     az_rad = math.radians(azimuth)
     pt = _traverse(origin, az_rad, distance, elevation)
-    typer.echo(f"N: {pt.northing:.4f}")
-    typer.echo(f"E: {pt.easting:.4f}")
-    typer.echo(f"Z: {pt.elevation:.4f}")
+    typer.echo(f"N: {_fmt(pt.northing)}")
+    typer.echo(f"E: {_fmt(pt.easting)}")
+    typer.echo(f"Z: {_fmt(pt.elevation)}")
     if report is not None:
         from cogokit.io.reports import report_traverse, write_report
         html = report_traverse(origin, az_rad, distance, pt)
@@ -179,8 +187,8 @@ def area(
         raise typer.Exit(code=1)
     a = polygon_area(pts)
     p = polygon_perimeter(pts)
-    typer.echo(f"Area:      {a:.4f}")
-    typer.echo(f"Perimeter: {p:.4f}")
+    typer.echo(f"Area:      {_fmt(a)}")
+    typer.echo(f"Perimeter: {_fmt(p)}")
     if report is not None:
         from cogokit.io.reports import report_area, write_report
         html = report_area(pts, a, p)
@@ -230,14 +238,14 @@ def curve(
         raise typer.Exit(code=1)
 
     delta_str = Angle.from_radians(c.delta).to_dms_string()
-    typer.echo(f"Radius:    {c.R:.4f}")
+    typer.echo(f"Radius:    {_fmt(c.R)}")
     typer.echo(f"Delta:     {delta_str}")
-    typer.echo(f"Tangent:   {c.T:.4f}")
-    typer.echo(f"Length:    {c.L:.4f}")
-    typer.echo(f"Chord:     {c.C:.4f}")
-    typer.echo(f"External:  {c.E:.4f}")
-    typer.echo(f"Mid-Ord:   {c.M:.4f}")
-    typer.echo(f"Degree:    {c.D:.4f}")
+    typer.echo(f"Tangent:   {_fmt(c.T)}")
+    typer.echo(f"Length:    {_fmt(c.L)}")
+    typer.echo(f"Chord:     {_fmt(c.C)}")
+    typer.echo(f"External:  {_fmt(c.E)}")
+    typer.echo(f"Mid-Ord:   {_fmt(c.M)}")
+    typer.echo(f"Degree:    {_fmt(c.D)}")
     if report is not None:
         from cogokit.io.reports import report_curve, write_report
         html = report_curve(kwargs, c)
@@ -370,7 +378,7 @@ def convert(
 
     lines = []
     for p in transformed.points():
-        lines.append(f"{p.number} {p.northing:.4f} {p.easting:.4f} {p.elevation:.4f}")
+        lines.append(f"{p.number} {_fmt(p.northing)} {_fmt(p.easting)} {_fmt(p.elevation)}")
 
     text = "\n".join(lines) + "\n"
     if output:
@@ -480,10 +488,10 @@ def traverse_run_cmd(
     typer.echo("=== Traverse Workflow Results ===\n")
     typer.echo(f"Angular Misclosure: {result.angular_misclosure.to_dms_string(4)}")
     typer.echo(f"Angular Tolerance:  {result.angular_tolerance.to_dms_string(4)}")
-    typer.echo(f"Closure North:      {result.closure_north:.4f}")
-    typer.echo(f"Closure East:       {result.closure_east:.4f}")
-    typer.echo(f"Linear Misclosure:  {result.linear_misclosure:.4f}")
-    typer.echo(f"Perimeter:          {result.perimeter:.4f}")
+    typer.echo(f"Closure North:      {_fmt(result.closure_north)}")
+    typer.echo(f"Closure East:       {_fmt(result.closure_east)}")
+    typer.echo(f"Linear Misclosure:  {_fmt(result.linear_misclosure)}")
+    typer.echo(f"Perimeter:          {_fmt(result.perimeter)}")
     if result.precision_ratio == float("inf"):
         typer.echo("Precision Ratio:    Perfect (no misclosure)")
     else:
@@ -491,7 +499,7 @@ def traverse_run_cmd(
     typer.echo("\n--- Adjusted Coordinates ---")
     for pt in result.adjusted_job.points():
         typer.echo(
-            f"  {pt.number:>5}  N={pt.northing:>12.4f}  E={pt.easting:>12.4f}  Z={pt.elevation:>10.4f}"
+            f"  {pt.number:>5}  N={_fmt(pt.northing):>12}  E={_fmt(pt.easting):>12}  Z={_fmt(pt.elevation):>10}"
         )
     if report is not None:
         from cogokit.core import Angle as _Angle
