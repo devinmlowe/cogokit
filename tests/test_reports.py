@@ -1,4 +1,4 @@
-"""Tests for HTML report generation (cogopro.io.reports)."""
+"""Tests for HTML report generation (cogokit.io.reports)."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from cogopro.cogo.inverse import InverseResult, inverse
-from cogopro.core import Angle, Point
-from cogopro.core.job import Job
-from cogopro.io.reports import (
+from cogokit.cogo.inverse import InverseResult, inverse
+from cogokit.core import Angle, Point
+from cogokit.core.job import Job
+from cogokit.io.reports import (
     report_area,
     report_convert,
     report_curve,
@@ -21,8 +21,8 @@ from cogopro.io.reports import (
     report_zones,
     write_report,
 )
-from cogopro.solvers.horizontal_curve import CurveElements, solve_curve
-from cogopro.surveying.workflow import TraverseWorkflow
+from cogokit.solvers.horizontal_curve import CurveElements, solve_curve
+from cogokit.surveying.workflow import TraverseWorkflow
 
 
 # ---------------------------------------------------------------------------
@@ -86,7 +86,7 @@ class TestReportTraverse:
         origin = Point(northing=1000.0, easting=2000.0, number=1)
         az_rad = math.radians(45.0)
         distance = 100.0
-        from cogopro.cogo.traverse import traverse
+        from cogokit.cogo.traverse import traverse
         result_pt = traverse(origin, az_rad, distance, 0.0)
         html = report_traverse(origin, az_rad, distance, result_pt)
         _assert_html_doc(html, "Traverse Report")
@@ -95,7 +95,7 @@ class TestReportTraverse:
         origin = Point(northing=1000.0, easting=2000.0, number=1)
         az_rad = math.radians(90.0)
         distance = 100.0
-        from cogopro.cogo.traverse import traverse
+        from cogokit.cogo.traverse import traverse
         result_pt = traverse(origin, az_rad, distance, 0.0)
         html = report_traverse(origin, az_rad, distance, result_pt)
         assert "Distance" in html
@@ -106,7 +106,7 @@ class TestReportTraverse:
         origin = Point(northing=1000.0, easting=2000.0, number=1)
         az_rad = math.radians(45.0)
         distance = 100.0
-        from cogopro.cogo.traverse import traverse
+        from cogokit.cogo.traverse import traverse
         result_pt = traverse(origin, az_rad, distance, 0.0)
         html = report_traverse(origin, az_rad, distance, result_pt)
         assert "<svg" in html
@@ -180,13 +180,13 @@ class TestReportCurve:
 
 class TestReportZones:
     def test_produces_valid_html(self):
-        from cogopro.geodetic.state_plane import list_zones
+        from cogokit.geodetic.state_plane import list_zones
         zone_list = list_zones(state="CA")
         html = report_zones(zone_list, state_filter="CA")
         _assert_html_doc(html, "State Plane Zones (CA)")
 
     def test_contains_key_values(self):
-        from cogopro.geodetic.state_plane import list_zones
+        from cogokit.geodetic.state_plane import list_zones
         zone_list = list_zones(state="CA")
         html = report_zones(zone_list, state_filter="CA")
         assert "CA" in html
@@ -194,14 +194,14 @@ class TestReportZones:
         assert "Zones found" in html
 
     def test_no_filter(self):
-        from cogopro.geodetic.state_plane import list_zones
+        from cogokit.geodetic.state_plane import list_zones
         zone_list = list_zones()
         html = report_zones(zone_list)
         _assert_html_doc(html, "State Plane Zones")
         assert "Zones found" in html
 
     def test_single_zone_in_list(self):
-        from cogopro.geodetic.state_plane import get_zone
+        from cogokit.geodetic.state_plane import get_zone
         zone = get_zone(26945)
         html = report_zones([zone], state_filter="CA")
         _assert_html_doc(html, "State Plane Zones (CA)")

@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from cogopro.solvers.vertical_curve import (
+from cogokit.solvers.vertical_curve import (
     elevation_at,
     solve_vertical_curve,
 )

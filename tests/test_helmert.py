@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from cogopro.adjustments.helmert import apply_helmert, helmert_2d
-from cogopro.core import Point
+from cogokit.adjustments.helmert import apply_helmert, helmert_2d
+from cogokit.core import Point
 
 # HELMERTS.txt data (point_number northing easting elevation description)
 HELMERTS_SOURCE = [

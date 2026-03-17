@@ -5,10 +5,10 @@ import math
 import pytest
 from typer.testing import CliRunner
 
-from cogopro.cli import app
-from cogopro.core import Angle, Point
-from cogopro.core.job import Job
-from cogopro.surveying.workflow import TraverseLeg, TraverseResult, TraverseWorkflow
+from cogokit.cli import app
+from cogokit.core import Angle, Point
+from cogokit.core.job import Job
+from cogokit.surveying.workflow import TraverseLeg, TraverseResult, TraverseWorkflow
 
 runner = CliRunner()
 
@@ -202,7 +202,7 @@ class TestTraverseWorkflowMatchesManualCompass:
         result = wf.run()
 
         # Manually apply compass_rule to raw_points
-        from cogopro.adjustments.compass_rule import compass_rule
+        from cogokit.adjustments.compass_rule import compass_rule
         manual = compass_rule(result.raw_points, known_end=None)
 
         # Should match

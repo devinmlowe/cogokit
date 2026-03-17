@@ -2,8 +2,8 @@
 
 import math
 
-from cogopro.cogo import Point
-from cogopro.cogo.intersections import bearing_bearing, bearing_distance, distance_distance
+from cogokit.cogo import Point
+from cogokit.cogo.intersections import bearing_bearing, bearing_distance, distance_distance
 
 
 def test_bearing_bearing_perpendicular():

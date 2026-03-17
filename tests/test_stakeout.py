@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from cogopro.core import Point
-from cogopro.surveying.stakeout import (
+from cogokit.core import Point
+from cogokit.surveying.stakeout import (
     SlopeStakePoint,
     SlopeStakeResult,
     StakeoutResult,
@@ -17,14 +17,14 @@ from cogopro.surveying.stakeout import (
     stake_catch_point,
     stake_point,
 )
-from cogopro.surveying.alignment import (
+from cogokit.surveying.alignment import (
     Alignment,
     GradeBreak,
     HorizontalAlignment,
     Tangent,
     VerticalProfile,
 )
-from cogopro.surveying.cross_sections import (
+from cogokit.surveying.cross_sections import (
     CrossSection,
     CrossSectionPoint,
     DesignTemplate,

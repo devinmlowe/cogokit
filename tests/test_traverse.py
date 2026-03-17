@@ -2,9 +2,9 @@
 
 import math
 
-from cogopro.cogo import Point
-from cogopro.cogo.traverse import traverse, sideshot
-from cogopro.cogo.inverse import inverse
+from cogokit.cogo import Point
+from cogokit.cogo.traverse import traverse, sideshot
+from cogokit.cogo.inverse import inverse
 
 
 def test_traverse_due_north():

@@ -4,9 +4,9 @@ import math
 
 import pytest
 
-from cogopro.core.job import Job
-from cogopro.core.point import Point
-from cogopro.core.units import AngularUnit, LinearUnit
+from cogokit.core.job import Job
+from cogokit.core.point import Point
+from cogokit.core.units import AngularUnit, LinearUnit
 
 
 class TestJobBasicOperations:
@@ -207,7 +207,7 @@ class TestJobMetadata:
         assert job.angular_unit == AngularUnit.RADIANS
 
     def test_crs_settable(self):
-        from cogopro.core.crs import CRS
+        from cogokit.core.crs import CRS
         job = Job()
         assert job.crs is None
         job.crs = CRS.geodetic()

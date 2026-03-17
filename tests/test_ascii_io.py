@@ -4,8 +4,8 @@ import io
 import math
 from pathlib import Path
 
-from cogopro.core import Job, Point
-from cogopro.io import Delimiter, read_points, write_points
+from cogokit.core import Job, Point
+from cogokit.io import Delimiter, read_points, write_points
 
 SAMPLE_DIR = Path(__file__).parent.parent / "original" / "ASCII"
 
