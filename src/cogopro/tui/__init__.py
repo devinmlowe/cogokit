@@ -17,5 +17,11 @@ def run() -> None:
             "The TUI requires the 'textual' package.\n"
             "Install it with: pip install cogopro[tui]"
         ) from exc
+
+    # Load config before creating the app so it can read units/theme/keybindings
+    from cogopro.config import load_config
+
+    load_config()
+
     app = COGOProApp()
     app.run()

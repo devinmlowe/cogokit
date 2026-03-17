@@ -18,6 +18,84 @@ from cogopro.solvers.horizontal_curve import solve_curve
 from cogopro.surveying.workflow import TraverseWorkflow
 
 app = typer.Typer(help="COGO+ Pro — coordinate geometry and surveying toolkit")
+config_app = typer.Typer(help="Manage application configuration")
+app.add_typer(config_app, name="config")
+
+
+@config_app.command("list")
+def config_list() -> None:
+    """Show all configuration values."""
+    from cogopro.config import get_config
+
+    cfg = get_config()
+    d = cfg.to_dict()
+    for section, values in d.items():
+        typer.echo(f"[{section}]")
+        if isinstance(values, dict):
+            for k, v in values.items():
+                typer.echo(f"  {k} = {v}")
+        typer.echo()
+
+
+@config_app.command("get")
+def config_get(key: str = typer.Argument(..., help="Dotted key, e.g. units.linear")) -> None:
+    """Get a single configuration value."""
+    from cogopro.config import get_config
+
+    cfg = get_config()
+    try:
+        value = cfg.get(key)
+        typer.echo(value)
+    except KeyError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1)
+
+
+@config_app.command("set")
+def config_set(
+    key: str = typer.Argument(..., help="Dotted key, e.g. units.linear"),
+    value: str = typer.Argument(..., help="Value to set"),
+    global_: bool = typer.Option(False, "--global", help="Write to global config instead of project-local"),
+) -> None:
+    """Set a configuration value."""
+    from cogopro.config import get_config, save_config
+
+    cfg = get_config()
+    try:
+        cfg.set(key, value)
+    except KeyError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1)
+    path = save_config(cfg, global_=global_)
+    typer.echo(f"{key} = {value}")
+    typer.echo(f"Saved to {path}")
+
+
+@config_app.command("reset")
+def config_reset(
+    global_: bool = typer.Option(False, "--global", help="Reset global config instead of project-local"),
+) -> None:
+    """Delete the configuration file (revert to defaults)."""
+    from pathlib import Path
+
+    from cogopro.config.loader import GLOBAL_CONFIG_PATH, PROJECT_CONFIG_PATH
+
+    path = GLOBAL_CONFIG_PATH if global_ else PROJECT_CONFIG_PATH
+    if path.is_file():
+        path.unlink()
+        typer.echo(f"Removed {path}")
+    else:
+        typer.echo(f"No config file at {path}")
+
+
+@config_app.command("path")
+def config_path() -> None:
+    """Show resolved configuration file paths and status."""
+    from cogopro.config.loader import GLOBAL_CONFIG_PATH, PROJECT_CONFIG_PATH
+
+    for label, p in [("Global", GLOBAL_CONFIG_PATH), ("Project", PROJECT_CONFIG_PATH)]:
+        exists = "exists" if p.is_file() else "not found"
+        typer.echo(f"{label:>8}: {p}  ({exists})")
 
 
 @app.command()
