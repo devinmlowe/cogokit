@@ -128,6 +128,92 @@ def grid_to_geodetic(
     return GeodeticCoordinate(result.lat, result.lon)
 
 
+def geodetic_to_ecef(
+    lat: float,
+    lon: float,
+    h: float,
+    ellipsoid: Ellipsoid = WGS84,
+) -> tuple[float, float, float]:
+    """Convert geodetic coordinates to ECEF (Earth-Centered, Earth-Fixed).
+
+    Parameters:
+        lat: Geodetic latitude in radians.
+        lon: Geodetic longitude in radians.
+        h: Ellipsoidal height in metres.
+        ellipsoid: Reference ellipsoid.
+
+    Returns:
+        Tuple (X, Y, Z) in metres.
+    """
+    sin_lat = math.sin(lat)
+    cos_lat = math.cos(lat)
+    sin_lon = math.sin(lon)
+    cos_lon = math.cos(lon)
+
+    N = ellipsoid.N(lat)
+
+    X = (N + h) * cos_lat * cos_lon
+    Y = (N + h) * cos_lat * sin_lon
+    Z = (N * (1.0 - ellipsoid.e2) + h) * sin_lat
+
+    return X, Y, Z
+
+
+def ecef_to_geodetic(
+    x: float,
+    y: float,
+    z: float,
+    ellipsoid: Ellipsoid = WGS84,
+) -> tuple[float, float, float]:
+    """Convert ECEF (X, Y, Z) to geodetic coordinates using Bowring's iterative method.
+
+    Parameters:
+        x: ECEF X coordinate in metres.
+        y: ECEF Y coordinate in metres.
+        z: ECEF Z coordinate in metres.
+        ellipsoid: Reference ellipsoid.
+
+    Returns:
+        Tuple (lat, lon, h) where lat/lon are in radians and h is in metres.
+    """
+    a = ellipsoid.a
+    b = ellipsoid.b
+    e2 = ellipsoid.e2
+    ep2 = ellipsoid.ep2
+
+    lon = math.atan2(y, x)
+
+    p = math.hypot(x, y)
+
+    # Initial estimate using Bowring's formula
+    theta = math.atan2(z * a, p * b)
+    lat = math.atan2(
+        z + ep2 * b * math.sin(theta) ** 3,
+        p - e2 * a * math.cos(theta) ** 3,
+    )
+
+    # Iterate to convergence
+    for _ in range(10):
+        sin_lat = math.sin(lat)
+        N = a / math.sqrt(1.0 - e2 * sin_lat * sin_lat)
+        lat_new = math.atan2(z + e2 * N * sin_lat, p)
+        if abs(lat_new - lat) < 1e-14:
+            lat = lat_new
+            break
+        lat = lat_new
+
+    sin_lat = math.sin(lat)
+    cos_lat = math.cos(lat)
+    N = a / math.sqrt(1.0 - e2 * sin_lat * sin_lat)
+
+    if abs(cos_lat) > 1e-10:
+        h = p / cos_lat - N
+    else:
+        h = abs(z) / abs(sin_lat) - N * (1.0 - e2)
+
+    return lat, lon, h
+
+
 def combined_scale_factor(
     grid_scale: float,
     elevation: float,
