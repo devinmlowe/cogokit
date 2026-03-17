@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import platform
+import sys
+
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.events import Key
 from textual.screen import ModalScreen, Screen
-from textual.widgets import Button, DataTable, Label, Select, Static
+from textual.widgets import Button, DataTable, Input, Label, Select, Static
 
+import cogokit
 from cogokit.config import get_config, get_registry, reload_config, save_config
 from cogokit.config.keybindings import ACTION_DESCRIPTIONS, _format_key_display
 from cogokit.core.units import AngularUnit, LinearUnit
@@ -145,6 +149,16 @@ class SettingsScreen(Screen):
         height: 3;
     }
 
+    .settings-row Input {
+        width: 1fr;
+        height: 3;
+    }
+
+    .about-row {
+        height: auto;
+        margin: 0 0 0 2;
+    }
+
     #keybinding-table {
         height: auto;
         max-height: 12;
@@ -233,10 +247,70 @@ class SettingsScreen(Screen):
                         id="sel-theme",
                     )
 
+            # Paths section
+            with Vertical(classes="settings-section"):
+                yield Static("Paths", classes="settings-section-title")
+                with Horizontal(classes="settings-row"):
+                    yield Label("Import Directory:")
+                    yield Input(
+                        value=cfg.paths.import_dir,
+                        id="inp-import-dir",
+                    )
+                with Horizontal(classes="settings-row"):
+                    yield Label("Export Directory:")
+                    yield Input(
+                        value=cfg.paths.export_dir,
+                        id="inp-export-dir",
+                    )
+
+            # Environment section
+            with Vertical(classes="settings-section"):
+                yield Static("Environment", classes="settings-section-title")
+                with Horizontal(classes="settings-row"):
+                    yield Label("Decimal Precision:")
+                    yield Select(
+                        [(str(i), str(i)) for i in range(1, 9)],
+                        value=str(cfg.environment.decimal_precision),
+                        id="sel-decimal-precision",
+                    )
+                with Horizontal(classes="settings-row"):
+                    yield Label("Coordinate Format:")
+                    yield Select(
+                        [
+                            ("Northing/Easting", "ne"),
+                            ("Easting/Northing", "en"),
+                        ],
+                        value=cfg.environment.coordinate_format,
+                        id="sel-coordinate-format",
+                    )
+                with Horizontal(classes="settings-row"):
+                    yield Label("Default CRS:")
+                    yield Input(
+                        value=cfg.environment.default_crs,
+                        placeholder="e.g. epsg:2277",
+                        id="inp-default-crs",
+                    )
+
             # Keybindings section
             with Vertical(classes="settings-section"):
                 yield Static("Keybindings (click to edit)", classes="settings-section-title")
                 yield DataTable(id="keybinding-table")
+
+            # About section (read-only)
+            with Vertical(classes="settings-section"):
+                yield Static("About", classes="settings-section-title")
+                yield Static(
+                    f"  cogokit version: {cogokit.__version__}",
+                    classes="about-row",
+                )
+                yield Static(
+                    f"  Python: {sys.version.split()[0]}",
+                    classes="about-row",
+                )
+                yield Static(
+                    f"  Platform: {platform.platform()}",
+                    classes="about-row",
+                )
 
         with Horizontal(id="save-bar"):
             yield Button("Save (Project)", variant="primary", id="btn-save-project")
@@ -302,6 +376,24 @@ class SettingsScreen(Screen):
         theme = self.query_one("#sel-theme", Select).value
         if theme is not None and theme != Select.BLANK:
             cfg.set("display.theme", str(theme))
+
+        # Paths
+        import_dir = self.query_one("#inp-import-dir", Input).value.strip()
+        if import_dir:
+            cfg.set("paths.import_dir", import_dir)
+        export_dir = self.query_one("#inp-export-dir", Input).value.strip()
+        if export_dir:
+            cfg.set("paths.export_dir", export_dir)
+
+        # Environment
+        precision = self.query_one("#sel-decimal-precision", Select).value
+        if precision is not None and precision != Select.BLANK:
+            cfg.set("environment.decimal_precision", str(precision))
+        coord_fmt = self.query_one("#sel-coordinate-format", Select).value
+        if coord_fmt is not None and coord_fmt != Select.BLANK:
+            cfg.set("environment.coordinate_format", str(coord_fmt))
+        default_crs = self.query_one("#inp-default-crs", Input).value.strip()
+        cfg.set("environment.default_crs", default_crs)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         bid = event.button.id
