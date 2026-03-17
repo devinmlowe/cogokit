@@ -2,7 +2,7 @@
 
 import math
 
-from cogopro.surveying.levelling import (
+from cogokit.surveying.levelling import (
     LevelObservation,
     LevelResult,
     LevelRun,

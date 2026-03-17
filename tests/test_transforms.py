@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from cogopro.adjustments.transforms import average, mirror, rotate, scale, shift
-from cogopro.core import Point
+from cogokit.adjustments.transforms import average, mirror, rotate, scale, shift
+from cogokit.core import Point
 
 
 class TestRotate:

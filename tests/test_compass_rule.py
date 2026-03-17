@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from cogopro.adjustments.compass_rule import compass_rule
-from cogopro.core import Point
+from cogokit.adjustments.compass_rule import compass_rule
+from cogokit.core import Point
 
 
 def test_closed_loop_traverse():

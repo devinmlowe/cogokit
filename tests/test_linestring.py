@@ -2,7 +2,7 @@
 
 import pytest
 
-from cogopro.core.linestring import LineString
+from cogokit.core.linestring import LineString
 
 
 class TestLineString:

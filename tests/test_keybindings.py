@@ -1,6 +1,6 @@
 """Tests for keybinding registry."""
 
-from cogopro.config.keybindings import (
+from cogokit.config.keybindings import (
     DEFAULT_BINDINGS,
     KeybindingRegistry,
     _format_key_display,
