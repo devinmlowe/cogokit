@@ -7,6 +7,8 @@ from cogokit.geodetic.conversions import (
     GeodeticCoordinate,
     GridCoordinate,
     combined_scale_factor,
+    ecef_to_geodetic,
+    geodetic_to_ecef,
     geodetic_to_grid,
     grid_to_geodetic,
     grid_to_ground,
@@ -115,6 +117,65 @@ class TestDistanceConversions:
         # At CM, scale ≈ 0.9996, at sea level
         grid_dist = ground_to_grid(1000.0, 0.9996, 0.0)
         assert math.isclose(grid_dist, 999.6, abs_tol=0.01)
+
+
+class TestGeodeticToEcef:
+    """Test geodetic <-> ECEF conversions."""
+
+    def test_geodetic_to_ecef_origin(self):
+        """Equator / prime meridian at sea level: X ≈ a, Y ≈ 0, Z ≈ 0."""
+        x, y, z = geodetic_to_ecef(0.0, 0.0, 0.0)
+        assert x == pytest.approx(6378137.0, abs=0.001)
+        assert y == pytest.approx(0.0, abs=0.001)
+        assert z == pytest.approx(0.0, abs=0.001)
+
+    def test_ecef_round_trip(self):
+        """Convert to ECEF and back should recover original coordinates."""
+        lat = math.radians(43.6532)
+        lon = math.radians(-79.3832)
+        h = 76.0
+
+        x, y, z = geodetic_to_ecef(lat, lon, h)
+        lat2, lon2, h2 = ecef_to_geodetic(x, y, z)
+
+        assert lat2 == pytest.approx(lat, abs=1e-12)
+        assert lon2 == pytest.approx(lon, abs=1e-12)
+        assert h2 == pytest.approx(h, abs=0.001)
+
+    def test_ecef_known_values(self):
+        """North pole at sea level: X ≈ 0, Y ≈ 0, Z ≈ b."""
+        from cogokit.geodetic.ellipsoid import WGS84
+
+        x, y, z = geodetic_to_ecef(math.pi / 2, 0.0, 0.0)
+        assert x == pytest.approx(0.0, abs=0.001)
+        assert y == pytest.approx(0.0, abs=0.001)
+        assert z == pytest.approx(WGS84.b, abs=0.001)
+
+    def test_ecef_round_trip_southern_hemisphere(self):
+        """Round-trip for a southern-hemisphere point."""
+        lat = math.radians(-33.8568)
+        lon = math.radians(151.2153)
+        h = 50.0
+
+        x, y, z = geodetic_to_ecef(lat, lon, h)
+        lat2, lon2, h2 = ecef_to_geodetic(x, y, z)
+
+        assert lat2 == pytest.approx(lat, abs=1e-12)
+        assert lon2 == pytest.approx(lon, abs=1e-12)
+        assert h2 == pytest.approx(h, abs=0.001)
+
+    def test_ecef_round_trip_high_elevation(self):
+        """Round-trip at high elevation (5000 m)."""
+        lat = math.radians(27.9881)
+        lon = math.radians(86.9250)
+        h = 8848.0
+
+        x, y, z = geodetic_to_ecef(lat, lon, h)
+        lat2, lon2, h2 = ecef_to_geodetic(x, y, z)
+
+        assert lat2 == pytest.approx(lat, abs=1e-12)
+        assert lon2 == pytest.approx(lon, abs=1e-12)
+        assert h2 == pytest.approx(h, abs=0.001)
 
 
 class TestGridCoordinateToPoint:

@@ -50,6 +50,8 @@ from cogokit.geodetic.conversions import (
     GeodeticCoordinate,
     GridCoordinate,
     combined_scale_factor,
+    ecef_to_geodetic,
+    geodetic_to_ecef,
     geodetic_to_grid,
     grid_to_geodetic,
     grid_to_ground,
