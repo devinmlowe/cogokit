@@ -8,6 +8,8 @@ import pytest
 
 from cogokit.core import Point
 
+import numpy as np
+
 # Import everything we need from the module
 from cogokit.adjustments.least_squares import (
     AdjustmentResult,
@@ -15,8 +17,10 @@ from cogokit.adjustments.least_squares import (
     AzimuthObservation,
     DirectionObservation,
     DistanceObservation,
+    GpsBaselineObservation,
     Network,
 )
+from cogokit.geodetic.conversions import geodetic_to_ecef
 
 
 # ---------------------------------------------------------------------------
@@ -522,3 +526,194 @@ class TestMultipleUnknowns:
             adj = result.adjusted_points[pn]
             assert adj.northing == pytest.approx(known[pn].northing, abs=0.001)
             assert adj.easting == pytest.approx(known[pn].easting, abs=0.001)
+
+
+# ===========================================================================
+# GPS Baseline observations
+# ===========================================================================
+
+# Helper: three geodetic points forming a triangle
+_GPS_POINTS = {
+    1: (math.radians(43.6532), math.radians(-79.3832), 76.0),   # Toronto
+    2: (math.radians(43.6600), math.radians(-79.3900), 80.0),   # ~800m NW
+    3: (math.radians(43.6550), math.radians(-79.3750), 85.0),   # ~700m E
+}
+
+
+def _ecef_points() -> dict[int, tuple[float, float, float]]:
+    """Convert the geodetic test points to ECEF."""
+    return {pn: geodetic_to_ecef(*llh) for pn, llh in _GPS_POINTS.items()}
+
+
+def _compute_baseline(
+    ecef: dict[int, tuple[float, float, float]],
+    from_pn: int,
+    to_pn: int,
+) -> tuple[float, float, float]:
+    """Compute the exact ECEF baseline vector between two points."""
+    pi = ecef[from_pn]
+    pj = ecef[to_pn]
+    return (pj[0] - pi[0], pj[1] - pi[1], pj[2] - pi[2])
+
+
+class TestGpsBaselineDataclass:
+    def test_gps_baseline_dataclass_defaults(self):
+        obs = GpsBaselineObservation(from_point=1, to_point=2, dx=10.0, dy=20.0, dz=30.0)
+        assert obs.from_point == 1
+        assert obs.to_point == 2
+        assert obs.dx == 10.0
+        assert obs.dy == 20.0
+        assert obs.dz == 30.0
+        assert obs.covariance is None
+        assert obs.std_dev == 0.010
+
+    def test_gps_baseline_custom_covariance(self):
+        cov = np.diag([0.001, 0.001, 0.002])
+        obs = GpsBaselineObservation(
+            from_point=1, to_point=2,
+            dx=10.0, dy=20.0, dz=30.0,
+            covariance=cov,
+        )
+        assert obs.covariance is not None
+        assert obs.covariance[2, 2] == pytest.approx(0.002)
+
+
+class TestGpsBaselineTriangle:
+    def test_simple_baseline_triangle(self):
+        """Three points, fix point 1, adjust points 2 and 3 from baselines."""
+        ecef = _ecef_points()
+
+        net = Network()
+        # Fix point 1
+        net.add_fixed_point_3d(1, *_GPS_POINTS[1])
+        # Approximate points 2 and 3 with slight offsets
+        lat2, lon2, h2 = _GPS_POINTS[2]
+        net.add_approximate_point_3d(2, lat2 + 1e-6, lon2 + 1e-6, h2 + 0.5)
+        lat3, lon3, h3 = _GPS_POINTS[3]
+        net.add_approximate_point_3d(3, lat3 - 1e-6, lon3 - 1e-6, h3 - 0.3)
+
+        # Baselines: 1->2, 1->3, 2->3
+        for from_pn, to_pn in [(1, 2), (1, 3), (2, 3)]:
+            dx, dy, dz = _compute_baseline(ecef, from_pn, to_pn)
+            net.add_observation(GpsBaselineObservation(
+                from_point=from_pn, to_point=to_pn,
+                dx=dx, dy=dy, dz=dz,
+            ))
+
+        result = net.adjust()
+        assert result.converged
+        assert result.adjusted_points_3d is not None
+
+        # Check adjusted ECEF coordinates match known values
+        for pn in [2, 3]:
+            adj = result.adjusted_points_3d[pn]
+            known = ecef[pn]
+            assert adj[0] == pytest.approx(known[0], abs=0.001)
+            assert adj[1] == pytest.approx(known[1], abs=0.001)
+            assert adj[2] == pytest.approx(known[2], abs=0.001)
+
+    def test_baseline_residuals_near_zero(self):
+        """With exact baselines, residuals should be near zero."""
+        ecef = _ecef_points()
+
+        net = Network()
+        net.add_fixed_point_3d(1, *_GPS_POINTS[1])
+        net.add_approximate_point_3d(2, *_GPS_POINTS[2])  # exact approx
+        net.add_approximate_point_3d(3, *_GPS_POINTS[3])  # exact approx
+
+        # Only two baselines (minimum for 2 unknowns with 3 components each = 6 obs, 6 unknowns)
+        for from_pn, to_pn in [(1, 2), (1, 3), (2, 3)]:
+            dx, dy, dz = _compute_baseline(ecef, from_pn, to_pn)
+            net.add_observation(GpsBaselineObservation(
+                from_point=from_pn, to_point=to_pn,
+                dx=dx, dy=dy, dz=dz,
+            ))
+
+        result = net.adjust()
+        assert result.converged
+        for r in result.residuals:
+            assert abs(r) < 1e-6
+
+    def test_baseline_convergence(self):
+        """GPS baseline adjustment should converge in 1 iteration (linear)."""
+        ecef = _ecef_points()
+
+        net = Network()
+        net.add_fixed_point_3d(1, *_GPS_POINTS[1])
+        lat2, lon2, h2 = _GPS_POINTS[2]
+        net.add_approximate_point_3d(2, lat2 + 2e-6, lon2 - 2e-6, h2 + 1.0)
+
+        dx, dy, dz = _compute_baseline(ecef, 1, 2)
+        net.add_observation(GpsBaselineObservation(
+            from_point=1, to_point=2, dx=dx, dy=dy, dz=dz,
+        ))
+
+        result = net.adjust()
+        assert result.converged
+        # Linear problem: should converge quickly (1 solve + 1 verification pass)
+        assert result.iterations <= 2
+
+    def test_baseline_with_covariance(self):
+        """Adjustment should work with a full 3x3 covariance matrix."""
+        ecef = _ecef_points()
+
+        net = Network()
+        net.add_fixed_point_3d(1, *_GPS_POINTS[1])
+        lat2, lon2, h2 = _GPS_POINTS[2]
+        net.add_approximate_point_3d(2, lat2 + 1e-6, lon2 + 1e-6, h2 + 0.5)
+
+        dx, dy, dz = _compute_baseline(ecef, 1, 2)
+        cov = np.array([
+            [0.0001, 0.00001, 0.00001],
+            [0.00001, 0.0001, 0.00001],
+            [0.00001, 0.00001, 0.0002],
+        ])
+        net.add_observation(GpsBaselineObservation(
+            from_point=1, to_point=2,
+            dx=dx, dy=dy, dz=dz,
+            covariance=cov,
+        ))
+
+        result = net.adjust()
+        assert result.converged
+        adj = result.adjusted_points_3d[2]
+        known = ecef[2]
+        assert adj[0] == pytest.approx(known[0], abs=0.001)
+        assert adj[1] == pytest.approx(known[1], abs=0.001)
+        assert adj[2] == pytest.approx(known[2], abs=0.001)
+
+    def test_adjusted_points_contain_geodetic(self):
+        """The 2D adjusted_points dict should contain geodetic lat/lon as northing/easting."""
+        ecef = _ecef_points()
+
+        net = Network()
+        net.add_fixed_point_3d(1, *_GPS_POINTS[1])
+        net.add_approximate_point_3d(2, *_GPS_POINTS[2])
+
+        dx, dy, dz = _compute_baseline(ecef, 1, 2)
+        net.add_observation(GpsBaselineObservation(
+            from_point=1, to_point=2, dx=dx, dy=dy, dz=dz,
+        ))
+
+        result = net.adjust()
+        assert result.converged
+
+        # adjusted_points should have geodetic degrees in northing/easting
+        adj2 = result.adjusted_points[2]
+        assert adj2.northing == pytest.approx(math.degrees(_GPS_POINTS[2][0]), abs=1e-6)
+        assert adj2.easting == pytest.approx(math.degrees(_GPS_POINTS[2][1]), abs=1e-6)
+        assert adj2.elevation == pytest.approx(_GPS_POINTS[2][2], abs=0.01)
+
+    def test_mixed_2d_3d_raises(self):
+        """Mixing 2D and GPS observations should raise an error."""
+        net = Network()
+        net.add_fixed_point_3d(1, *_GPS_POINTS[1])
+        net.add_approximate_point_3d(2, *_GPS_POINTS[2])
+
+        net.add_observation(GpsBaselineObservation(
+            from_point=1, to_point=2, dx=1.0, dy=2.0, dz=3.0,
+        ))
+        net.add_observation(DistanceObservation(from_point=1, to_point=2, distance=100.0))
+
+        with pytest.raises(ValueError, match="Mixed"):
+            net.adjust()
