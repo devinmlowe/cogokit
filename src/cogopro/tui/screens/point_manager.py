@@ -223,6 +223,42 @@ class PointManagerScreen(Screen):
     def on_screen_resume(self) -> None:
         """Re-sync when returning from another screen."""
         self._refresh_table()
+        self._apply_display_config()
+
+    def on_config_changed(self, event) -> None:
+        """React to live config changes (theme, units, display)."""
+        self._apply_display_config()
+
+    def _apply_display_config(self) -> None:
+        """Apply display config values to current screen state."""
+        from cogopro.config import get_config
+
+        cfg = get_config()
+
+        # Apply graph visibility
+        try:
+            graph = self.query_one("#graph-panel", GraphWidget)
+            if graph.display != cfg.display.show_graph:
+                graph.display = cfg.display.show_graph
+                self._graph_visible = cfg.display.show_graph
+        except Exception:
+            pass
+
+        # Apply label mode
+        try:
+            graph = self.query_one("#graph-panel", GraphWidget)
+            if graph.label_mode != cfg.display.label_mode:
+                graph.label_mode = cfg.display.label_mode
+        except Exception:
+            pass
+
+        # Apply layout mode
+        target = cfg.display.default_layout
+        for mode in _LAYOUT_CYCLE:
+            if mode.value == target and mode != self._layout_mode:
+                self._layout_mode = mode
+                self._apply_layout()
+                break
 
     # -- Table refresh + graph sync ------------------------------------
 

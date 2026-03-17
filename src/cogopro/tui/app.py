@@ -5,9 +5,10 @@ from __future__ import annotations
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.events import DescendantBlur, DescendantFocus
+from textual.message import Message
 from textual.widgets import DataTable, Header, Input
 
-from cogopro.config.loader import get_config, get_registry
+from cogopro.config.loader import get_config, get_registry, reload_config
 from cogopro.core.job import Job
 from cogopro.core.units import AngularUnit, LinearUnit
 from cogopro.tui.screens.main_menu import MainMenuScreen
@@ -22,6 +23,14 @@ from cogopro.tui.widgets.context_footer import (
 # Map config string values to unit enums
 _LINEAR_MAP = {u.value.lower(): u for u in LinearUnit}
 _ANGULAR_MAP = {u.value.lower(): u for u in AngularUnit}
+
+
+class ConfigChanged(Message):
+    """Posted after config is saved and applied to notify screens."""
+
+    def __init__(self, keybindings_changed: bool = False) -> None:
+        super().__init__()
+        self.keybindings_changed = keybindings_changed
 
 
 class COGOProApp(App):
@@ -171,6 +180,50 @@ class COGOProApp(App):
         from cogopro.tui.screens.help_screen import HelpScreen
 
         self.push_screen(HelpScreen())
+
+    # -- Live config reload --------------------------------------------
+
+    def apply_config(self, old_keybindings: dict[str, str] | None = None) -> list[str]:
+        """Apply current config to the running app. Returns status messages.
+
+        Hot-reloads: theme, units, display settings.
+        Cannot hot-reload: keybinding changes (requires restart).
+        """
+        cfg = get_config()
+        messages: list[str] = []
+
+        # Theme — fully live
+        new_theme = cfg.display.theme
+        theme_name = f"textual-{new_theme}" if new_theme in ("dark", "light") else None
+        if theme_name and theme_name != self.theme:
+            self.theme = theme_name
+            messages.append(f"Theme changed to {new_theme}")
+
+        # Units — update Job
+        new_linear = _LINEAR_MAP.get(cfg.units.linear.lower(), LinearUnit.FOOT)
+        new_angular = _ANGULAR_MAP.get(cfg.units.angular.lower(), AngularUnit.DMS)
+        if self.current_job.linear_unit != new_linear:
+            self.current_job.linear_unit = new_linear
+            messages.append(f"Linear unit changed to {new_linear.value}")
+        if self.current_job.angular_unit != new_angular:
+            self.current_job.angular_unit = new_angular
+            messages.append(f"Angular unit changed to {new_angular.value}")
+
+        # Check keybinding changes
+        keybindings_changed = False
+        if old_keybindings is not None:
+            registry = get_registry()
+            new_bindings = registry.all_bindings()
+            if old_keybindings != new_bindings:
+                keybindings_changed = True
+                messages.append(
+                    "Keybinding changes require a restart to take effect"
+                )
+
+        # Broadcast to all screens
+        self.post_message(ConfigChanged(keybindings_changed=keybindings_changed))
+
+        return messages
 
     # -- Context-sensitive footer updates ------------------------------
 
