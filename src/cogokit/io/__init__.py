@@ -21,3 +21,10 @@ __all__ = [
     "write_points",
     "write_report",
 ]
+
+try:
+    from .ifc import export_ifc, import_ifc
+
+    __all__ += ["export_ifc", "import_ifc"]
+except ImportError:
+    pass
