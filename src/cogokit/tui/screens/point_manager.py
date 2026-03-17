@@ -265,14 +265,17 @@ class PointManagerScreen(Screen):
     # -- Table refresh + graph sync ------------------------------------
 
     def _refresh_table(self) -> None:
+        from cogokit.config import get_config
+
+        precision = get_config().environment.decimal_precision
         table = self.query_one("#point-table", DataTable)
         table.clear()
         for pt in self.app.current_job.points():
             table.add_row(
                 str(pt.number or ""),
-                f"{pt.northing:.4f}",
-                f"{pt.easting:.4f}",
-                f"{pt.elevation:.4f}",
+                f"{pt.northing:.{precision}f}",
+                f"{pt.easting:.{precision}f}",
+                f"{pt.elevation:.{precision}f}",
                 pt.description or "",
                 key=str(pt.number),
             )
@@ -321,10 +324,13 @@ class PointManagerScreen(Screen):
         # Populate edit fields
         pt = self.app.current_job.get_point(point_number)
         if pt:
+            from cogokit.config import get_config
+
+            precision = get_config().environment.decimal_precision
             self.query_one("#add-number", Input).value = str(pt.number or "")
-            self.query_one("#add-north", Input).value = f"{pt.northing:.4f}"
-            self.query_one("#add-east", Input).value = f"{pt.easting:.4f}"
-            self.query_one("#add-elev", Input).value = f"{pt.elevation:.4f}"
+            self.query_one("#add-north", Input).value = f"{pt.northing:.{precision}f}"
+            self.query_one("#add-east", Input).value = f"{pt.easting:.{precision}f}"
+            self.query_one("#add-elev", Input).value = f"{pt.elevation:.{precision}f}"
             self.query_one("#add-desc", Input).value = pt.description or ""
 
         # Move table cursor to matching row
