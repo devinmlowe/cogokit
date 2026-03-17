@@ -228,4 +228,4 @@ class TestTopLevel:
     def test_help(self):
         result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
-        assert "COGO" in result.output
+        assert "cogokit" in result.output
