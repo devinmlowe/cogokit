@@ -19,6 +19,8 @@ from cogopro.tui.widgets.result_panel import ResultPanel
 class InverseScreen(Screen):
     """Compute azimuth, distance, and grade between two points."""
 
+    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+
     DEFAULT_CSS = """
     InverseScreen { layout: vertical; }
     """
@@ -117,6 +119,8 @@ class InverseScreen(Screen):
 # ---------------------------------------------------------------------------
 class TraverseScreen(Screen):
     """Compute a new point from origin, azimuth, and distance."""
+
+    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
 
     DEFAULT_CSS = """
     TraverseScreen { layout: vertical; }
@@ -220,6 +224,8 @@ class TraverseScreen(Screen):
 # ---------------------------------------------------------------------------
 class IntersectionsScreen(Screen):
     """Bearing-bearing, bearing-distance, and distance-distance intersections."""
+
+    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
 
     DEFAULT_CSS = """
     IntersectionsScreen { layout: vertical; }
@@ -333,6 +339,8 @@ class IntersectionsScreen(Screen):
 # ---------------------------------------------------------------------------
 class AreaScreen(Screen):
     """Compute polygon area and perimeter from job points."""
+
+    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
 
     DEFAULT_CSS = """
     AreaScreen { layout: vertical; }

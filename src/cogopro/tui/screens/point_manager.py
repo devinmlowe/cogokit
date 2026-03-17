@@ -30,11 +30,12 @@ class PointManagerScreen(Screen):
     """View, add, edit, and remove points in the current job."""
 
     BINDINGS = [
-        Binding("l", "cycle_layout", "Layout", show=True),
-        Binding("g", "toggle_graph", "Graph", show=True),
-        Binding("t", "cycle_labels", "Labels", show=True),
+        Binding("ctrl+l", "cycle_layout", "Layout", show=False),
+        Binding("ctrl+g", "toggle_graph", "Graph", show=False),
+        Binding("ctrl+t", "cycle_labels", "Labels", show=False),
     ]
-    # TODO: configurable tmux-style prefix keybindings (future PR)
+
+    FOOTER_HINTS = "^L Layout | ^G Graph | ^T Labels | ? Help"
 
     DEFAULT_CSS = """
     PointManagerScreen {
