@@ -4,9 +4,9 @@ import math
 
 import pytest
 
-from cogopro.core import Point
-from cogopro.cogo.inverse import inverse
-from cogopro.surveying.traverse_plus import (
+from cogokit.core import Point
+from cogokit.cogo.inverse import inverse
+from cogokit.surveying.traverse_plus import (
     FieldObservation,
     StationSetup,
     process_station,

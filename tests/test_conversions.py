@@ -2,8 +2,8 @@
 
 import math
 
-from cogopro.core import Point
-from cogopro.geodetic.conversions import (
+from cogokit.core import Point
+from cogokit.geodetic.conversions import (
     GeodeticCoordinate,
     GridCoordinate,
     combined_scale_factor,

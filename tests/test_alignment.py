@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from cogopro.core.point import Point
-from cogopro.surveying.alignment import (
+from cogokit.core.point import Point
+from cogokit.surveying.alignment import (
     Alignment,
     CircularCurve,
     GradeBreak,
@@ -284,7 +284,7 @@ class TestEntrySpiralElement:
 
     def test_end_matches_solver(self, sp):
         """End coordinates should match the standalone spiral() solver."""
-        from cogopro.solvers.horizontal_curve import spiral as spiral_params
+        from cogokit.solvers.horizontal_curve import spiral as spiral_params
 
         params = spiral_params(200.0, 500.0)
         pt = sp.point_at(200.0)

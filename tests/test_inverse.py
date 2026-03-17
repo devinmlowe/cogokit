@@ -2,8 +2,8 @@
 
 import math
 
-from cogopro.cogo import Point
-from cogopro.cogo.inverse import inverse
+from cogokit.cogo import Point
+from cogokit.cogo.inverse import inverse
 
 
 def test_inverse_due_north():

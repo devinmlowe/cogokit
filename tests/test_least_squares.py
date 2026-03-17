@@ -6,10 +6,10 @@ import math
 
 import pytest
 
-from cogopro.core import Point
+from cogokit.core import Point
 
 # Import everything we need from the module
-from cogopro.adjustments.least_squares import (
+from cogokit.adjustments.least_squares import (
     AdjustmentResult,
     AngleObservation,
     AzimuthObservation,

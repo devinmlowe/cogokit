@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from cogopro.solvers.triangle import (
+from cogokit.solvers.triangle import (
     SolveCase,
     solve_aas,
     solve_asa,

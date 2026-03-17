@@ -4,14 +4,14 @@ import tomllib
 
 import pytest
 
-from cogopro.config.loader import (
+from cogokit.config.loader import (
     _deep_merge,
     load_config,
     reset_config_cache,
     save_config,
 )
-from cogopro.config.model import Config
-from cogopro.config.writer import dumps
+from cogokit.config.model import Config
+from cogokit.config.writer import dumps
 
 
 class TestConfigModel:
@@ -161,14 +161,14 @@ class TestTomlWriter:
         assert cfg2.to_dict() == cfg.to_dict()
 
     def test_write_file(self, tmp_path):
-        from cogopro.config.writer import write_toml
+        from cogokit.config.writer import write_toml
 
         path = tmp_path / "test.toml"
         write_toml({"key": "value"}, path)
         assert path.read_text() == 'key = "value"\n'
 
     def test_write_creates_parents(self, tmp_path):
-        from cogopro.config.writer import write_toml
+        from cogokit.config.writer import write_toml
 
         path = tmp_path / "sub" / "dir" / "test.toml"
         write_toml({"key": "val"}, path)

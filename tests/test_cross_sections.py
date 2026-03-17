@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from cogopro.surveying.cross_sections import (
+from cogokit.surveying.cross_sections import (
     CrossSection,
     CrossSectionPoint,
     DesignTemplate,
@@ -422,7 +422,7 @@ def test_sorted_points():
 # ---------------------------------------------------------------------------
 
 
-from cogopro.surveying.cross_sections import interpolate_surface
+from cogokit.surveying.cross_sections import interpolate_surface
 
 
 def _make_sections():

@@ -14,8 +14,8 @@ pytestmark = pytest.mark.skipif(not HAS_TUI, reason="textual/textual-plotext not
 
 
 if HAS_TUI:
-    from cogopro.tui.viewmodels.graph_vm import GraphPointVM, GraphViewModel
-    from cogopro.tui.widgets.graph_widget import GraphWidget
+    from cogokit.tui.viewmodels.graph_vm import GraphPointVM, GraphViewModel
+    from cogokit.tui.widgets.graph_widget import GraphWidget
 
     class GraphTestApp(App):
         """Minimal app for testing GraphWidget."""

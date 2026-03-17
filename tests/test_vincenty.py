@@ -4,9 +4,9 @@ import math
 
 import pytest
 
-from cogopro.core import Angle
-from cogopro.geodetic.ellipsoid import WGS84
-from cogopro.geodetic.vincenty import (
+from cogokit.core import Angle
+from cogokit.geodetic.ellipsoid import WGS84
+from cogokit.geodetic.vincenty import (
     vincenty_direct,
     vincenty_inverse,
     vincenty_inverse_from_angles,

@@ -2,9 +2,9 @@
 
 import math
 
-from cogopro.core import Point
-from cogopro.geodetic.ellipsoid import WGS84
-from cogopro.geodetic.projections import (
+from cogokit.core import Point
+from cogokit.geodetic.ellipsoid import WGS84
+from cogokit.geodetic.projections import (
     geodetic_to_utm,
     tm_forward,
     tm_inverse,

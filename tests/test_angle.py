@@ -2,7 +2,7 @@
 
 import math
 
-from cogopro.core import Angle, BearingQuadrant
+from cogokit.core import Angle, BearingQuadrant
 
 
 class TestAngleCreation:
