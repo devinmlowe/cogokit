@@ -138,3 +138,114 @@ class TestCrossChecks:
     def test_angle_sum(self):
         sol = solve_sss(5, 12, 13)
         assert math.isclose(sol.A + sol.B + sol.C, math.pi, rel_tol=1e-12)
+
+
+# --- Edge-case tests --------------------------------------------------------
+
+class TestSSSEdgeCases:
+    def test_zero_side(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_sss(0, 4, 5)
+
+    def test_negative_side_b(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_sss(3, -4, 5)
+
+    def test_negative_side_c(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_sss(3, 4, -5)
+
+    def test_collinear_exact(self):
+        """a + b == c exactly: degenerate triangle."""
+        with pytest.raises(ValueError, match="inequality"):
+            solve_sss(1, 2, 3)
+
+    def test_near_collinear(self):
+        """Near-degenerate triangle: tiny area, one angle near pi."""
+        sol = solve_sss(1, 1, 1.9999)
+        assert sol.area < 0.01  # very small area
+        assert sol.C > math.radians(170)  # angle nearly flat
+
+
+class TestSASEdgeCases:
+    def test_zero_side_a(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_sas(0, math.radians(60), 7)
+
+    def test_zero_side_b(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_sas(5, math.radians(60), 0)
+
+    def test_negative_side(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_sas(-5, math.radians(60), 7)
+
+    def test_zero_angle(self):
+        with pytest.raises(ValueError, match="angle"):
+            solve_sas(5, 0, 7)
+
+    def test_pi_angle(self):
+        with pytest.raises(ValueError, match="angle"):
+            solve_sas(5, math.pi, 7)
+
+    def test_negative_angle(self):
+        with pytest.raises(ValueError, match="angle"):
+            solve_sas(5, -0.5, 7)
+
+
+class TestASAEdgeCases:
+    def test_angles_sum_greater_than_pi(self):
+        with pytest.raises(ValueError):
+            solve_asa(math.radians(91), 10, math.radians(91))
+
+    def test_zero_angle_A(self):
+        with pytest.raises(ValueError):
+            solve_asa(0, 10, math.radians(60))
+
+    def test_zero_angle_B(self):
+        with pytest.raises(ValueError):
+            solve_asa(math.radians(60), 10, 0)
+
+    def test_negative_angle(self):
+        with pytest.raises(ValueError):
+            solve_asa(-0.5, 10, math.radians(60))
+
+    def test_zero_side(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_asa(math.radians(60), 0, math.radians(60))
+
+
+class TestAASEdgeCases:
+    def test_angles_sum_greater_than_pi(self):
+        with pytest.raises(ValueError):
+            solve_aas(math.radians(100), math.radians(100), 5)
+
+    def test_zero_angle(self):
+        with pytest.raises(ValueError):
+            solve_aas(0, math.radians(60), 5)
+
+    def test_negative_side(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_aas(math.radians(30), math.radians(60), -5)
+
+    def test_zero_side(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_aas(math.radians(30), math.radians(60), 0)
+
+
+class TestSSAEdgeCases:
+    def test_zero_side_a(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_ssa(0, 10, math.radians(30))
+
+    def test_negative_side(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_ssa(-5, 10, math.radians(30))
+
+    def test_zero_angle(self):
+        with pytest.raises(ValueError, match="Angle"):
+            solve_ssa(5, 10, 0)
+
+    def test_pi_angle(self):
+        with pytest.raises(ValueError, match="Angle"):
+            solve_ssa(5, 10, math.pi)
