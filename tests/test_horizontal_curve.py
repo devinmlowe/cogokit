@@ -194,3 +194,62 @@ class TestThreePointCurveFromPoints:
         assert math.isclose(center.easting, cx_f, abs_tol=1e-9)
         assert math.isclose(center.northing, cy_f, abs_tol=1e-9)
         assert math.isclose(R, R_f, rel_tol=1e-9)
+
+
+# --- Edge-case tests --------------------------------------------------------
+
+class TestSolveCurveEdgeCases:
+    def test_zero_delta(self):
+        with pytest.raises(ValueError, match="Central angle"):
+            solve_curve(R=500, delta=0)
+
+    def test_negative_delta(self):
+        with pytest.raises(ValueError, match="Central angle"):
+            solve_curve(R=500, delta=-0.5)
+
+    def test_delta_equals_pi(self):
+        with pytest.raises(ValueError, match="Central angle"):
+            solve_curve(R=500, delta=math.pi)
+
+    def test_delta_exceeds_pi(self):
+        with pytest.raises(ValueError, match="Central angle"):
+            solve_curve(R=500, delta=math.pi + 0.1)
+
+    def test_negative_radius(self):
+        with pytest.raises(ValueError, match="Radius"):
+            solve_curve(R=-500, delta=0.5)
+
+    def test_near_zero_delta(self):
+        """Very small delta: arc length should approximate chord length."""
+        delta = math.radians(0.01)
+        c = solve_curve(R=1000, delta=delta)
+        assert math.isclose(c.L, c.C, rel_tol=1e-6)
+
+    def test_very_large_radius(self):
+        """Large radius should compute without error."""
+        c = solve_curve(R=1_000_000, delta=math.radians(30))
+        assert c.R == 1_000_000
+        assert c.L > 0
+
+    def test_near_semicircle(self):
+        """Delta near pi: tangent should be very large."""
+        delta = math.pi - 0.001
+        c = solve_curve(R=500, delta=delta)
+        assert c.T > 100_000  # tangent blows up near semicircle
+
+    def test_chord_less_than_arc(self):
+        """For any valid curve, chord < arc length."""
+        c = solve_curve(R=500, delta=math.radians(60))
+        assert c.C < c.L
+
+
+class TestThreePointCurveEdgeCases:
+    def test_duplicate_points_12(self):
+        """Two identical points should raise ValueError (collinear)."""
+        with pytest.raises(ValueError, match="collinear"):
+            three_point_curve(1, 1, 1, 1, 3, 4)
+
+    def test_duplicate_all_points(self):
+        """All three points identical."""
+        with pytest.raises(ValueError, match="collinear"):
+            three_point_curve(5, 5, 5, 5, 5, 5)
