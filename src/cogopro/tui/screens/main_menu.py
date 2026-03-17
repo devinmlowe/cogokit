@@ -11,6 +11,8 @@ from textual.widgets import Button, Static
 class MainMenuScreen(Screen):
     """Top-level menu for navigating all COGOpro modules."""
 
+    FOOTER_HINTS = "1-8 Navigate | q Quit | ? Help"
+
     DEFAULT_CSS = """
     MainMenuScreen {
         layout: vertical;
@@ -114,6 +116,12 @@ class MainMenuScreen(Screen):
                         classes="menu-section",
                     ),
 
+                    Vertical(
+                        Static("Application", classes="menu-section-title"),
+                        Button("Settings", id="btn-settings"),
+                        classes="menu-section",
+                    ),
+
                     id="menu-wrapper",
                 ),
             ),
@@ -211,3 +219,7 @@ class MainMenuScreen(Screen):
         elif button_id == "btn-trav-workflow":
             from cogopro.tui.screens.surveying import TraverseWorkflowScreen
             self.app.push_screen(TraverseWorkflowScreen())
+
+        elif button_id == "btn-settings":
+            from cogopro.tui.screens.settings import SettingsScreen
+            self.app.push_screen(SettingsScreen())

@@ -4,10 +4,24 @@ from __future__ import annotations
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.widgets import Footer, Header
+from textual.events import DescendantBlur, DescendantFocus
+from textual.widgets import DataTable, Header, Input
 
+from cogopro.config.loader import get_config, get_registry
 from cogopro.core.job import Job
+from cogopro.core.units import AngularUnit, LinearUnit
 from cogopro.tui.screens.main_menu import MainMenuScreen
+from cogopro.tui.widgets.context_footer import (
+    DEFAULT_HINTS,
+    INPUT_HINTS,
+    TABLE_HINTS,
+    ContextFooter,
+    FooterHintChanged,
+)
+
+# Map config string values to unit enums
+_LINEAR_MAP = {u.value.lower(): u for u in LinearUnit}
+_ANGULAR_MAP = {u.value.lower(): u for u in AngularUnit}
 
 
 class COGOProApp(App):
@@ -119,17 +133,32 @@ class COGOProApp(App):
     """
 
     BINDINGS = [
-        Binding("q", "quit", "Quit", show=True),
-        Binding("escape", "go_back", "Back", show=True),
+        Binding("q", "quit", "Quit", show=False),
+        Binding("escape", "go_back", "Back", show=False),
+        Binding("question_mark", "show_help", "Help", show=False),
     ]
 
     def __init__(self) -> None:
         super().__init__()
-        self.current_job: Job = Job(name="Default")
+
+        # Apply config to Job defaults
+        cfg = get_config()
+        linear = _LINEAR_MAP.get(cfg.units.linear.lower(), LinearUnit.FOOT)
+        angular = _ANGULAR_MAP.get(cfg.units.angular.lower(), AngularUnit.DMS)
+        self.current_job: Job = Job(
+            name="Default",
+            linear_unit=linear,
+            angular_unit=angular,
+        )
+
+        # Apply theme from config
+        theme = cfg.display.theme
+        if theme in ("dark", "light"):
+            self.theme = f"textual-{theme}"
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Footer()
+        yield ContextFooter(id="context-footer")
 
     def on_mount(self) -> None:
         self.push_screen(MainMenuScreen())
@@ -137,3 +166,51 @@ class COGOProApp(App):
     def action_go_back(self) -> None:
         if len(self.screen_stack) > 2:
             self.pop_screen()
+
+    def action_show_help(self) -> None:
+        from cogopro.tui.screens.help_screen import HelpScreen
+
+        self.push_screen(HelpScreen())
+
+    # -- Context-sensitive footer updates ------------------------------
+
+    def _get_footer(self) -> ContextFooter | None:
+        try:
+            return self.query_one("#context-footer", ContextFooter)
+        except Exception:
+            return None
+
+    def _get_screen_hints(self) -> str:
+        """Get the FOOTER_HINTS from the current screen, or default."""
+        screen = self.screen
+        return getattr(screen, "FOOTER_HINTS", DEFAULT_HINTS)
+
+    def on_descendant_focus(self, event: DescendantFocus) -> None:
+        footer = self._get_footer()
+        if footer is None:
+            return
+        widget = event.widget
+        if isinstance(widget, Input):
+            footer.set_hints(INPUT_HINTS)
+        elif isinstance(widget, DataTable):
+            footer.set_hints(TABLE_HINTS)
+        else:
+            footer.set_hints(self._get_screen_hints())
+
+    def on_descendant_blur(self, event: DescendantBlur) -> None:
+        footer = self._get_footer()
+        if footer is None:
+            return
+        footer.set_hints(self._get_screen_hints())
+
+    def on_screen_resume(self) -> None:
+        """Update footer when returning to a screen."""
+        footer = self._get_footer()
+        if footer is not None:
+            footer.set_hints(self._get_screen_hints())
+
+    def on_footer_hint_changed(self, event: FooterHintChanged) -> None:
+        """Handle explicit hint updates from screens/widgets."""
+        footer = self._get_footer()
+        if footer is not None:
+            footer.set_hints(event.hints)
