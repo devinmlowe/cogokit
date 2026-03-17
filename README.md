@@ -1,4 +1,4 @@
-# COGOpro Python
+# cogokit
 
 A Python reimplementation of **COGO+ Pro v4.20**, a coordinate geometry and surveying application originally written for the HP 50g/49g+ calculators by [Simple Geospatial Solutions](https://sgss.ca).
 
@@ -8,7 +8,7 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 
 **660 tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI). Optional: [NumPy](https://numpy.org/) for least-squares network adjustment.
 
-### Core (`cogopro.core`)
+### Core (`cogokit.core`)
 
 - **Point** - Survey point with northing/easting/elevation, distance and azimuth calculations
 - **Angle** - DMS, decimal degrees, radians, HP notation, and surveyor bearing conversions with full arithmetic
@@ -16,27 +16,27 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 - **CRS** - Coordinate reference system (geodetic/UTM/State Plane/custom projected) with point and job transformations between systems
 - **Units** - Linear (feet, meters, chains, links, rods) and angular (DMS, decimal degrees, radians, grads) unit conversions
 
-### Coordinate Geometry (`cogopro.cogo`)
+### Coordinate Geometry (`cogokit.cogo`)
 
 - **Inverse** - Azimuth, horizontal/slope/vertical distance, and grade between two points
 - **Traverse** - Forward traverse and sideshot from a point along a bearing
 - **Intersections** - Bearing-bearing, bearing-distance, and distance-distance intersections
 - **Area** - Polygon area (shoelace formula) and perimeter
 
-### Adjustments (`cogopro.adjustments`)
+### Adjustments (`cogokit.adjustments`)
 
 - **Compass Rule** - Bowditch traverse adjustment for closed and fixed-endpoint traverses
 - **Helmert Transform** - 2D similarity transformation (least-squares) with translation, rotation, and scale
-- **Least Squares** - General-purpose network adjustment with distance, angle, direction, and azimuth observations (requires NumPy: `pip install cogopro[lsa]`)
+- **Least Squares** - General-purpose network adjustment with distance, angle, direction, and azimuth observations (requires NumPy: `pip install cogokit[lsa]`)
 - **Transforms** - Rotate, mirror, shift, scale, and average point sets
 
-### Geometric Solvers (`cogopro.solvers`)
+### Geometric Solvers (`cogokit.solvers`)
 
 - **Triangle** - All solution cases: SSS, SAS, ASA, AAS, ambiguous SSA
 - **Horizontal Curve** - Circular curve solver (any 2 elements), 3-point curve, clothoid spirals
 - **Vertical Curve** - Parabolic vertical curve solver with high/low point detection
 
-### Geodetic (`cogopro.geodetic`)
+### Geodetic (`cogokit.geodetic`)
 
 - **Ellipsoids** - 9 reference ellipsoids (WGS84, GRS80, Clarke 1866, etc.) with derived parameters
 - **Vincenty** - Direct and inverse geodesic solutions on the ellipsoid
@@ -45,7 +45,7 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 - **PROJ4 Parser** - Parse PROJ4 strings into projection definitions for custom CRS
 - **Conversions** - Grid-to-geodetic coordinate conversion, combined scale factor, ground/grid distance
 
-### Surveying (`cogopro.surveying`)
+### Surveying (`cogokit.surveying`)
 
 - **Levelling** - Differential level run reduction, loop closure adjustment
 - **Traverse Plus** - Total station field observation reduction (HI/HT, slope-to-horizontal), station processing, Tienstra 3-point resection
@@ -54,7 +54,7 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 - **Stakeout** - Point and alignment stakeout calculations, batch staking, slope staking with cut/fill, 3D slope staking with iterative catch-point computation on irregular ground surfaces
 - **Cross Sections** - Cross-section templates, cut/fill area computation, average end area and prismoidal volumes, earthwork summaries, mass haul ordinates, bilinear surface interpolation
 
-### I/O (`cogopro.io`)
+### I/O (`cogokit.io`)
 
 - **ASCII I/O** - Read/write delimited point files (space, tab, comma) with auto-detection
 - **CSV** - Flexible CSV import/export with configurable column mappings and header auto-detection
@@ -71,15 +71,15 @@ cd cogopro-python
 pip install -e ".[dev]"
 ```
 
-Requires Python 3.11+. Runtime dependency: `typer` (for CLI). Development: `pytest` and `ruff`. Optional: `pip install cogopro[lsa]` for least-squares network adjustment (NumPy).
+Requires Python 3.11+. Runtime dependency: `typer` (for CLI). Development: `pytest` and `ruff`. Optional: `pip install cogokit[lsa]` for least-squares network adjustment (NumPy).
 
 ## Usage
 
 ```python
-from cogopro.core import Point, Angle, Job
-from cogopro.cogo.inverse import inverse
-from cogopro.cogo.traverse import traverse
-from cogopro.io import read_points, write_points, Delimiter
+from cogokit.core import Point, Angle, Job
+from cogokit.cogo.inverse import inverse
+from cogokit.cogo.traverse import traverse
+from cogokit.io import read_points, write_points, Delimiter
 
 # Create points
 p1 = Point(northing=1000.0, easting=2000.0, elevation=100.0, number=1, description="BM1")
@@ -100,43 +100,43 @@ write_points(job, "output.csv", delimiter=Delimiter.COMMA)
 
 ## CLI
 
-After installation, the `cogopro` command is available:
+After installation, the `cogokit` command is available:
 
 ```bash
 # Inverse between two points
-cogopro inverse 1000 2000 1500 2500
+cogokit inverse 1000 2000 1500 2500
 
 # Forward traverse
-cogopro traverse 1000 2000 45.0 100.0 --elevation 102.0
+cogokit traverse 1000 2000 45.0 100.0 --elevation 102.0
 
 # Polygon area from a points file
-cogopro area points.txt
+cogokit area points.txt
 
 # Solve a horizontal curve (any 2 elements)
-cogopro curve --radius 500 --delta 30
+cogokit curve --radius 500 --delta 30
 
 # Transform coordinates between CRS types
-cogopro convert points.txt --from-crs utm:17:N --to-crs geodetic:wgs84
+cogokit convert points.txt --from-crs utm:17:N --to-crs geodetic:wgs84
 
 # Convert to State Plane (by EPSG code or state:zone)
-cogopro convert points.txt --from-crs geodetic:nad83 --to-crs epsg:26945
-cogopro convert points.txt --from-crs utm:11:N --to-crs sp:CA:5
+cogokit convert points.txt --from-crs geodetic:nad83 --to-crs epsg:26945
+cogokit convert points.txt --from-crs utm:11:N --to-crs sp:CA:5
 
 # List available State Plane zones
-cogopro zones --state TX
+cogokit zones --state TX
 
 # Export to DXF or KML
-cogopro export points.txt --format dxf --output site.dxf
+cogokit export points.txt --format dxf --output site.dxf
 
 # Run a full traverse workflow from observations
-cogopro traverse-run observations.csv --start-point "1 1000.0 5000.0 100.0" --start-azimuth 45.0
+cogokit traverse-run observations.csv --start-point "1 1000.0 5000.0 100.0" --start-azimuth 45.0
 
 # Generate an HTML field report (works with any command)
-cogopro inverse 1000 2000 1500 2500 --report ./reports/
-cogopro curve --radius 500 --delta 30 --report curve_report.html
+cogokit inverse 1000 2000 1500 2500 --report ./reports/
+cogokit curve --radius 500 --delta 30 --report curve_report.html
 ```
 
-Run `cogopro --help` or `cogopro <command> --help` for full option details.
+Run `cogokit --help` or `cogopro <command> --help` for full option details.
 
 ## Running Tests
 
@@ -150,7 +150,7 @@ pytest tests/test_alignment.py  # Single module
 
 ```
 cogopro-python/
-  src/cogopro/
+  src/cogokit/
     cli.py          # Typer CLI
     core/           # Point, Angle, Job, CRS, Units
     cogo/           # Inverse, traverse, intersections, area
@@ -184,7 +184,7 @@ cogopro-python/
 ### High Priority
 
 - **GPS baseline observations** ([#2](../../issues/2)) - Add 3D GPS baseline vectors to the least-squares network adjustment module (requires 3×3 variance-covariance weight model and ECEF coordinate frame).
-- **Interactive TUI** ([#3](../../issues/3)) - Build a terminal UI (via `textual`) mirroring the original COGO+ Pro menu system for interactive field use.
+- **Interactive TUI** ([#3](../../issues/3)) - Build a terminal UI (via `textual`) mirroring the original cogokit menu system for interactive field use.
 
 ### Lower Priority
 
