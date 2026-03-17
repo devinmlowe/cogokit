@@ -9,7 +9,7 @@ from textual.events import Key
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Button, DataTable, Label, Select, Static
 
-from cogopro.config import get_config, get_registry, save_config
+from cogopro.config import get_config, get_registry, reload_config, save_config
 from cogopro.config.keybindings import ACTION_DESCRIPTIONS, _format_key_display
 from cogopro.core.units import AngularUnit, LinearUnit
 
@@ -306,11 +306,23 @@ class SettingsScreen(Screen):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         bid = event.button.id
         if bid in ("btn-save-project", "btn-save-global"):
+            # Snapshot current keybindings before save to detect changes
+            old_bindings = get_registry().all_bindings()
+
             self._collect_settings()
             cfg = get_config()
             global_ = bid == "btn-save-global"
             path = save_config(cfg, global_=global_)
-            self._set_status(f"Saved to {path}")
+
+            # Reload config from disk to sync the registry
+            reload_config()
+
+            # Apply live changes (theme, units, display)
+            status_parts = [f"Saved to {path}"]
+            apply_messages = self.app.apply_config(old_keybindings=old_bindings)
+            if apply_messages:
+                status_parts.extend(apply_messages)
+            self._set_status(" | ".join(status_parts))
 
     def _set_status(self, msg: str) -> None:
         self.query_one("#settings-status", Static).update(msg)
