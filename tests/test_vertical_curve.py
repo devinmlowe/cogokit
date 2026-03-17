@@ -94,3 +94,69 @@ class TestVerticalCurveEdgeCases:
     def test_zero_length_raises(self):
         with pytest.raises(ValueError, match="positive"):
             solve_vertical_curve(1000, 500, 0.03, -0.02, 0)
+
+    def test_negative_length_raises(self):
+        with pytest.raises(ValueError, match="positive"):
+            solve_vertical_curve(1000, 500, 0.03, -0.02, -100)
+
+
+# --- Additional edge-case tests ---------------------------------------------
+
+class TestVerticalCurveAdditionalEdgeCases:
+    def test_very_small_grade_difference(self):
+        """Very small grade difference: valid curve with large K."""
+        vc = solve_vertical_curve(1000, 500, 0.030, 0.031, 200)
+        assert vc.K > 0
+        assert vc.L == 200
+
+    def test_symmetric_crest_high_point_at_midpoint(self):
+        """Symmetric crest (+5%, -5%): high point at midpoint of curve."""
+        vc = solve_vertical_curve(1000, 500, 0.05, -0.05, 400)
+        assert vc.high_low_station is not None
+        midpoint_station = vc.bvc_station + vc.L / 2
+        assert math.isclose(vc.high_low_station, midpoint_station, rel_tol=1e-9)
+
+    def test_symmetric_sag_low_point_at_midpoint(self):
+        """Symmetric sag (-5%, +5%): low point at midpoint of curve."""
+        vc = solve_vertical_curve(1000, 500, -0.05, 0.05, 400)
+        assert vc.high_low_station is not None
+        midpoint_station = vc.bvc_station + vc.L / 2
+        assert math.isclose(vc.high_low_station, midpoint_station, rel_tol=1e-9)
+
+    def test_g1_zero_high_low_at_bvc_boundary(self):
+        """G1=0: high/low point at x=0 (BVC boundary), should be None (not inside)."""
+        vc = solve_vertical_curve(1000, 500, 0.0, -0.05, 400)
+        # x_hl = -G1*L/(G2-G1) = 0 -> not in (0, L), so None
+        assert vc.high_low_station is None
+
+    def test_g2_zero_high_low_at_evc_boundary(self):
+        """G2=0: high/low point at x=L (EVC boundary), should be None (not inside)."""
+        vc = solve_vertical_curve(1000, 500, 0.05, 0.0, 400)
+        # x_hl = -0.05*400/(0 - 0.05) = 400 = L -> not in (0, L), so None
+        assert vc.high_low_station is None
+
+    def test_elevation_at_bvc_matches(self):
+        """elevation_at x=0 should return BVC elevation."""
+        vc = solve_vertical_curve(2000, 300, 0.04, -0.03, 500)
+        elev = elevation_at(vc.bvc_elevation, vc.G1, vc.G2, vc.L, 0)
+        assert math.isclose(elev, vc.bvc_elevation)
+
+    def test_elevation_at_evc_matches(self):
+        """elevation_at x=L should return EVC elevation."""
+        vc = solve_vertical_curve(2000, 300, 0.04, -0.03, 500)
+        elev = elevation_at(vc.bvc_elevation, vc.G1, vc.G2, vc.L, vc.L)
+        assert math.isclose(elev, vc.evc_elevation, rel_tol=1e-9)
+
+    def test_steep_grades(self):
+        """Steep grades (20%): should compute without error."""
+        vc = solve_vertical_curve(5000, 1000, 0.20, -0.20, 800)
+        assert vc.high_low_station is not None
+        midpoint = vc.bvc_station + vc.L / 2
+        assert math.isclose(vc.high_low_station, midpoint, rel_tol=1e-9)
+
+    def test_steep_asymmetric_grades(self):
+        """Steep asymmetric grades: valid computation."""
+        vc = solve_vertical_curve(5000, 1000, 0.15, -0.10, 600)
+        assert vc.bvc_station < vc.evc_station
+        assert vc.high_low_station is not None
+        assert vc.bvc_station < vc.high_low_station < vc.evc_station
