@@ -17,7 +17,7 @@ from cogopro.tui.widgets.result_panel import ResultPanel
 class LevellingScreen(Screen):
     """Differential level run reduction and loop closure."""
 
-    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Calculate | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     LevellingScreen { layout: vertical; }
@@ -188,7 +188,7 @@ class LevellingScreen(Screen):
 class TraverseWorkflowScreen(Screen):
     """End-to-end traverse workflow from field observations."""
 
-    FOOTER_HINTS = "Enter Calculate | Esc Back | ? Help"
+    FOOTER_HINTS = "Enter Calculate | Esc Back | q Quit | ? Help"
 
     DEFAULT_CSS = """
     TraverseWorkflowScreen { layout: vertical; }

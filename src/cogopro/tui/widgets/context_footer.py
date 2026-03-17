@@ -52,6 +52,6 @@ class ContextFooter(Static):
 
 
 # Standard hint strings for common contexts
-INPUT_HINTS = "Enter Confirm | Esc Cancel | Tab Next"
-TABLE_HINTS = "Enter Select | Arrows Navigate | Esc Back"
-DEFAULT_HINTS = "q Quit | Esc Back | ? Help"
+INPUT_HINTS = "Enter Confirm | Tab Next | Esc Back | q Quit"
+TABLE_HINTS = "Enter Select | Arrows Navigate | Esc Back | q Quit"
+DEFAULT_HINTS = "Esc Back | q Quit | ? Help"
