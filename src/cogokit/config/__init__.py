@@ -13,7 +13,7 @@ from .loader import (
     reset_config_cache,
     save_config,
 )
-from .model import Config, DisplayConfig, PathsConfig, UnitsConfig
+from .model import Config, DisplayConfig, EnvironmentConfig, PathsConfig, UnitsConfig
 from .writer import dumps, write_toml
 
 __all__ = [
@@ -21,6 +21,7 @@ __all__ = [
     "Config",
     "DEFAULT_BINDINGS",
     "DisplayConfig",
+    "EnvironmentConfig",
     "KeybindingRegistry",
     "PathsConfig",
     "UnitsConfig",

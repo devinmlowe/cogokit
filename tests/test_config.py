@@ -10,7 +10,7 @@ from cogokit.config.loader import (
     reset_config_cache,
     save_config,
 )
-from cogokit.config.model import Config
+from cogokit.config.model import Config, EnvironmentConfig
 from cogokit.config.writer import dumps
 
 
@@ -27,6 +27,9 @@ class TestConfigModel:
         assert cfg.display.theme == "dark"
         assert cfg.paths.import_dir == "."
         assert cfg.paths.export_dir == "."
+        assert cfg.environment.decimal_precision == 4
+        assert cfg.environment.coordinate_format == "ne"
+        assert cfg.environment.default_crs == ""
         assert cfg.keybindings == {}
 
     def test_from_dict_empty(self):
@@ -224,3 +227,75 @@ class TestConfigLoader:
         reset_config_cache()
         cfg2 = load_config(global_path=path, project_path=tmp_path / "none.toml")
         assert cfg2.units.linear == "meter"
+
+
+class TestEnvironmentConfig:
+    """Test EnvironmentConfig dataclass and integration with Config."""
+
+    def test_environment_config_defaults(self):
+        env = EnvironmentConfig()
+        assert env.decimal_precision == 4
+        assert env.coordinate_format == "ne"
+        assert env.default_crs == ""
+
+    def test_environment_config_from_dict(self):
+        cfg = Config.from_dict({
+            "environment": {
+                "decimal_precision": 6,
+                "coordinate_format": "en",
+                "default_crs": "epsg:2277",
+            }
+        })
+        assert cfg.environment.decimal_precision == 6
+        assert cfg.environment.coordinate_format == "en"
+        assert cfg.environment.default_crs == "epsg:2277"
+
+    def test_environment_config_from_dict_partial(self):
+        cfg = Config.from_dict({"environment": {"decimal_precision": 2}})
+        assert cfg.environment.decimal_precision == 2
+        assert cfg.environment.coordinate_format == "ne"  # default preserved
+        assert cfg.environment.default_crs == ""  # default preserved
+
+    def test_environment_config_to_dict(self):
+        cfg = Config()
+        d = cfg.to_dict()
+        assert "environment" in d
+        assert d["environment"]["decimal_precision"] == 4
+        assert d["environment"]["coordinate_format"] == "ne"
+        assert d["environment"]["default_crs"] == ""
+
+    def test_config_get_set_environment(self):
+        cfg = Config()
+        assert cfg.get("environment.decimal_precision") == 4
+
+        cfg.set("environment.decimal_precision", "6")
+        assert cfg.environment.decimal_precision == 6
+
+        cfg.set("environment.coordinate_format", "en")
+        assert cfg.environment.coordinate_format == "en"
+
+        cfg.set("environment.default_crs", "epsg:2277")
+        assert cfg.environment.default_crs == "epsg:2277"
+
+    def test_decimal_precision_range(self):
+        """Precision values 1-8 should be accepted (coerced from string)."""
+        cfg = Config()
+        for i in range(1, 9):
+            cfg.set("environment.decimal_precision", str(i))
+            assert cfg.environment.decimal_precision == i
+
+    def test_environment_roundtrip(self, tmp_path):
+        """Environment config survives save/reload cycle."""
+        cfg = Config()
+        cfg.set("environment.decimal_precision", "6")
+        cfg.set("environment.coordinate_format", "en")
+        cfg.set("environment.default_crs", "epsg:2277")
+
+        path = tmp_path / "env_test.toml"
+        save_config(cfg, path=path)
+
+        reset_config_cache()
+        cfg2 = load_config(global_path=path, project_path=tmp_path / "none.toml")
+        assert cfg2.environment.decimal_precision == 6
+        assert cfg2.environment.coordinate_format == "en"
+        assert cfg2.environment.default_crs == "epsg:2277"

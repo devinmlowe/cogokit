@@ -33,6 +33,15 @@ class PathsConfig:
 
 
 @dataclass
+class EnvironmentConfig:
+    """Environment and formatting preferences."""
+
+    decimal_precision: int = 4
+    coordinate_format: str = "ne"  # "ne" or "en"
+    default_crs: str = ""
+
+
+@dataclass
 class Config:
     """Application configuration with dotted-key access.
 
@@ -42,6 +51,7 @@ class Config:
     units: UnitsConfig = field(default_factory=UnitsConfig)
     display: DisplayConfig = field(default_factory=DisplayConfig)
     paths: PathsConfig = field(default_factory=PathsConfig)
+    environment: EnvironmentConfig = field(default_factory=EnvironmentConfig)
     keybindings: dict[str, str] = field(default_factory=dict)
 
     @classmethod
@@ -50,12 +60,14 @@ class Config:
         units_data = data.get("units", {})
         display_data = data.get("display", {})
         paths_data = data.get("paths", {})
+        environment_data = data.get("environment", {})
         keybindings_data = data.get("keybindings", {})
 
         return cls(
             units=UnitsConfig(**{k: v for k, v in units_data.items() if k in UnitsConfig.__dataclass_fields__}),
             display=DisplayConfig(**{k: v for k, v in display_data.items() if k in DisplayConfig.__dataclass_fields__}),
             paths=PathsConfig(**{k: v for k, v in paths_data.items() if k in PathsConfig.__dataclass_fields__}),
+            environment=EnvironmentConfig(**{k: v for k, v in environment_data.items() if k in EnvironmentConfig.__dataclass_fields__}),
             keybindings=dict(keybindings_data),
         )
 
@@ -75,6 +87,11 @@ class Config:
             "paths": {
                 "import_dir": self.paths.import_dir,
                 "export_dir": self.paths.export_dir,
+            },
+            "environment": {
+                "decimal_precision": self.environment.decimal_precision,
+                "coordinate_format": self.environment.coordinate_format,
+                "default_crs": self.environment.default_crs,
             },
             "keybindings": dict(self.keybindings),
         }
