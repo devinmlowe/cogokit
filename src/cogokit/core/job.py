@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from typing import TYPE_CHECKING, Iterable, Iterator, List, Optional
 
+from .linestring import LineString
 from .point import Point
 from .units import AngularUnit, LinearUnit
 
@@ -18,6 +20,12 @@ CREATE TABLE IF NOT EXISTS points (
     easting     REAL NOT NULL,
     elevation   REAL NOT NULL DEFAULT 0.0,
     description TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS linestrings (
+    id            INTEGER PRIMARY KEY,
+    name          TEXT NOT NULL UNIQUE,
+    point_numbers TEXT NOT NULL,
+    closed        BOOLEAN NOT NULL DEFAULT 0
 );
 """
 
@@ -47,8 +55,7 @@ class Job:
         self._db_path = db_path
         self._conn: sqlite3.Connection | None = sqlite3.connect(db_path)
         self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.execute(_SCHEMA)
-        self._conn.commit()
+        self._conn.executescript(_SCHEMA)
 
     # ---- Point operations ----
 
@@ -126,6 +133,66 @@ class Job:
     def point_count(self) -> int:
         """Return the number of points in the job."""
         row = self._conn.execute("SELECT COUNT(*) FROM points").fetchone()
+        return row[0]
+
+    # ---- LineString operations ----
+
+    def add_linestring(self, ls: LineString) -> None:
+        """Add or update a linestring in the job."""
+        self._conn.execute(
+            "INSERT OR REPLACE INTO linestrings (name, point_numbers, closed) "
+            "VALUES (?, ?, ?)",
+            (ls.name, json.dumps(list(ls.point_numbers)), ls.closed),
+        )
+        self._conn.commit()
+
+    def get_linestring(self, name: str) -> Optional[LineString]:
+        """Retrieve a linestring by name, or None if not found."""
+        row = self._conn.execute(
+            "SELECT name, point_numbers, closed FROM linestrings WHERE name = ?",
+            (name,),
+        ).fetchone()
+        if row is None:
+            return None
+        return LineString(
+            name=row[0],
+            point_numbers=tuple(json.loads(row[1])),
+            closed=bool(row[2]),
+        )
+
+    def remove_linestring(self, name: str) -> bool:
+        """Remove a linestring by name. Return True if it existed."""
+        cursor = self._conn.execute(
+            "DELETE FROM linestrings WHERE name = ?", (name,),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
+
+    def has_linestring(self, name: str) -> bool:
+        """Return True if a linestring with the given name exists."""
+        row = self._conn.execute(
+            "SELECT 1 FROM linestrings WHERE name = ?", (name,),
+        ).fetchone()
+        return row is not None
+
+    def linestrings(self) -> List[LineString]:
+        """Return all linestrings sorted by name."""
+        rows = self._conn.execute(
+            "SELECT name, point_numbers, closed FROM linestrings ORDER BY name",
+        ).fetchall()
+        return [
+            LineString(
+                name=r[0],
+                point_numbers=tuple(json.loads(r[1])),
+                closed=bool(r[2]),
+            )
+            for r in rows
+        ]
+
+    @property
+    def linestring_count(self) -> int:
+        """Return the number of linestrings in the job."""
+        row = self._conn.execute("SELECT COUNT(*) FROM linestrings").fetchone()
         return row[0]
 
     # ---- Dunder methods ----
