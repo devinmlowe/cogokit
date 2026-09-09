@@ -1,10 +1,19 @@
 """Tests for keybinding registry."""
 
+import pytest
+
 from cogokit.config.keybindings import (
     DEFAULT_BINDINGS,
     KeybindingRegistry,
     _format_key_display,
 )
+
+try:
+    import textual  # noqa: F401
+
+    HAS_TUI = True
+except ImportError:
+    HAS_TUI = False
 
 
 class TestKeybindingRegistry:
@@ -37,11 +46,10 @@ class TestKeybindingRegistry:
 
     def test_unknown_action_raises(self):
         reg = KeybindingRegistry()
-        import pytest
-
         with pytest.raises(KeyError):
             reg.get_key("nonexistent_action")
 
+    @pytest.mark.skipif(not HAS_TUI, reason="textual not installed")
     def test_to_textual_bindings(self):
         reg = KeybindingRegistry()
         actions = {"cycle_layout": "Layout", "toggle_graph": "Graph"}
