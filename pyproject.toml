@@ -6,8 +6,27 @@ build-backend = "setuptools.build_meta"
 name = "cogokit"
 version = "0.3.0"
 description = "Python reimplementation of COGO+ Pro surveying/coordinate geometry software"
+readme = "README.md"
 requires-python = ">=3.11"
+authors = [{name = "Devin Lowe"}]
+keywords = ["surveying", "cogo", "coordinate-geometry", "geodesy", "state-plane", "landxml"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Operating System :: OS Independent",
+]
 dependencies = ["typer>=0.9"]
+
+[project.urls]
+Homepage = "https://github.com/devinmlowe/cogokit"
+Repository = "https://github.com/devinmlowe/cogokit"
+Issues = "https://github.com/devinmlowe/cogokit/issues"
 
 [project.scripts]
 cogokit = "cogokit.cli:app"
