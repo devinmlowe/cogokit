@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cogokit"
 version = "0.3.0"
-description = "Python reimplementation of COGO+ Pro surveying/coordinate geometry software"
+description = "Coordinate geometry, traverse adjustment, geodetic projections and surveying calculations for Python (CLI + TUI)"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]

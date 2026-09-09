@@ -1,8 +1,8 @@
 # cogokit
 
-A Python reimplementation of **COGO+ Pro v4.20**, a coordinate geometry and surveying application originally written for the HP 50g/49g+ calculators by [Simple Geospatial Solutions](https://sgss.ca).
+An independent, clean-room Python implementation of the coordinate-geometry workflow popularized by COGO+ Pro on the HP 50g: COGO, traverse adjustment, curves, triangles, geodetic projections, State Plane, and field surveying reductions, packaged as a modular library with a CLI, an optional TUI, and comprehensive test coverage.
 
-This project reverse-engineers the HP RPL calculator programs (libraries L930-L936) into a clean, modular Python package with comprehensive test coverage. The original calculator source files are preserved in the `original/` directory for reference.
+COGO+ Pro is a product of Simple Geospatial Solutions; this project is not affiliated with or endorsed by them.
 
 ## Features
 
@@ -170,20 +170,7 @@ cogokit/
     data/           # Sample point files and traverse observations
     reports/        # Example HTML reports for all 8 CLI commands
   tests/            # 850+ tests across 48 test files
-  original/         # Original HP calculator source files (L930-L936)
 ```
-
-### HP Library Mapping
-
-| Library | File | Domain |
-|---------|------|--------|
-| L930 | `PROGRAM/L930.HP` | Main menu, point management, settings, basic COGO |
-| L931 | `PROGRAM/L931.HP` | Curves, compass rule, traverse, geodetic calcs |
-| L932 | `PROGRAM/L932.HP` | Figures/areas, transformations, Helmert, traverse stakeout |
-| L933 | `PROGRAM/L933.HP` | Triangle solver, curve solver, vertical curves, alignments |
-| L934 | `PROGRAM/L934.HP` | Coordinate systems, projections, geodetic conversions |
-| L935 | `PROGRAM/L935.HP` | Levelling |
-| L936 | `PROGRAM/L936.HP` | Utilities/support |
 
 ## Next Steps
 
@@ -197,12 +184,6 @@ cogokit/
 - ~~**Report generation**~~ - HTML field reports with SVG diagrams via `--report` flag on all CLI commands.
 - ~~**Point database backend**~~ - Job class backed by SQLite with in-memory default and optional persistent storage.
 - ~~**3D slope staking**~~ - Iterative catch-point computation on irregular ground surfaces with bilinear surface interpolation.
-
-## Origin
-
-COGO+ Pro v4.20 was developed by Simple Geospatial Solutions (sgss.ca) as a comprehensive coordinate geometry suite for HP 50g and 49g+ graphing calculators. The original software was distributed as compiled HP RPL libraries (L930-L936) covering COGO, adjustments, curves, triangles, geodetics, and surveying operations.
-
-This Python port preserves the mathematical algorithms while modernizing the architecture into a testable, extensible package.
 
 ## License
 
