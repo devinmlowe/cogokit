@@ -4,7 +4,6 @@ import math
 
 import pytest
 
-from cogokit.geodetic.ellipsoid import GRS80
 
 
 class TestProjectionForward:

@@ -2,7 +2,6 @@
 
 import math
 
-import pytest
 
 from cogokit.core.job import Job
 from cogokit.core.linestring import LineString

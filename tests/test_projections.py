@@ -3,7 +3,6 @@
 import math
 
 from cogokit.core import Point
-from cogokit.geodetic.ellipsoid import WGS84
 from cogokit.geodetic.projections import (
     geodetic_to_utm,
     tm_forward,

@@ -10,7 +10,7 @@ Requires NumPy (optional dependency): pip install cogokit[lsa]
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 try:
     import numpy as np

@@ -2,7 +2,6 @@
 
 import math
 
-import pytest
 from typer.testing import CliRunner
 
 from cogokit.cli import app

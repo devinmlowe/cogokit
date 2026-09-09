@@ -6,9 +6,7 @@ import pytest
 
 from cogokit.core import Point
 from cogokit.surveying.stakeout import (
-    SlopeStakePoint,
     SlopeStakeResult,
-    StakeoutResult,
     batch_stake,
     slope_stake,
     slope_stake_3d,

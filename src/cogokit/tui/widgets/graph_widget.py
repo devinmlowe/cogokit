@@ -9,7 +9,7 @@ from textual.reactive import reactive
 
 from textual_plotext import PlotextPlot
 
-from cogokit.tui.viewmodels.graph_vm import GraphLineVM, GraphPointVM, GraphViewModel
+from cogokit.tui.viewmodels.graph_vm import GraphPointVM, GraphViewModel
 
 
 class GraphWidget(PlotextPlot):

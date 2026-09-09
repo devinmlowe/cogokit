@@ -6,9 +6,9 @@ import pytest
 from typer.testing import CliRunner
 
 from cogokit.cli import app
-from cogokit.core import Angle, Point
+from cogokit.core import Point
 from cogokit.core.job import Job
-from cogokit.surveying.workflow import TraverseLeg, TraverseResult, TraverseWorkflow
+from cogokit.surveying.workflow import TraverseLeg, TraverseWorkflow
 
 runner = CliRunner()
 

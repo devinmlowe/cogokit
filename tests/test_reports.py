@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import math
-from pathlib import Path
 
-import pytest
 
-from cogokit.cogo.inverse import InverseResult, inverse
+from cogokit.cogo.inverse import inverse
 from cogokit.core import Angle, Point
-from cogokit.core.job import Job
 from cogokit.io.reports import (
     report_area,
     report_convert,
@@ -21,7 +18,7 @@ from cogokit.io.reports import (
     report_zones,
     write_report,
 )
-from cogokit.solvers.horizontal_curve import CurveElements, solve_curve
+from cogokit.solvers.horizontal_curve import solve_curve
 from cogokit.surveying.workflow import TraverseWorkflow
 
 

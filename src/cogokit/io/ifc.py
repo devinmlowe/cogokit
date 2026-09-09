@@ -9,7 +9,6 @@ Requires ifcopenshell (optional dependency): pip install cogokit[ifc]
 
 from __future__ import annotations
 
-import math
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
@@ -28,9 +27,7 @@ from ..core.point import Point
 if TYPE_CHECKING:
     from ..core.crs import CRS
     from ..surveying.alignment import (
-        CircularCurve,
         HorizontalAlignment,
-        Tangent,
     )
 
 

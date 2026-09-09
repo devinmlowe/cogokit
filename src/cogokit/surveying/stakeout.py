@@ -10,9 +10,7 @@ from cogokit.core import Point
 from cogokit.cogo.inverse import inverse
 from cogokit.surveying.cross_sections import (
     CrossSection,
-    CrossSectionPoint,
     DesignTemplate,
-    _interpolate_profile,
     interpolate_surface,
 )
 

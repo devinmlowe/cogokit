@@ -8,12 +8,7 @@ from dataclasses import dataclass
 from cogokit.core import Point
 from cogokit.geodetic.ellipsoid import Ellipsoid, WGS84
 from cogokit.geodetic.projections import (
-    TMInverseResult,
-    TMResult,
-    UTMResult,
     geodetic_to_utm,
-    tm_forward,
-    tm_inverse,
     utm_to_geodetic,
 )
 

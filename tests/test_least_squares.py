@@ -12,7 +12,6 @@ import numpy as np
 
 # Import everything we need from the module
 from cogokit.adjustments.least_squares import (
-    AdjustmentResult,
     AngleObservation,
     AzimuthObservation,
     DirectionObservation,

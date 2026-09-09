@@ -4,7 +4,6 @@ import math
 
 from cogokit.surveying.levelling import (
     LevelObservation,
-    LevelResult,
     LevelRun,
     adjust_level_loop,
     reduce_level_run,

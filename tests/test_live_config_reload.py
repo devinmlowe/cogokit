@@ -13,12 +13,10 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_TUI, reason="textual not installed")
 
 if HAS_TUI:
-    from cogokit.config import get_config, reload_config
+    from cogokit.config import get_config
     from cogokit.config.loader import reset_config_cache
-    from cogokit.core.job import Job
-    from cogokit.core.units import AngularUnit, LinearUnit
-    from cogokit.tui.app import CogoKitApp, _ANGULAR_MAP, _LINEAR_MAP
-    from cogokit.tui.widgets.context_footer import ContextFooter
+    from cogokit.core.units import LinearUnit
+    from cogokit.tui.app import CogoKitApp
 
 
 @pytest.mark.asyncio

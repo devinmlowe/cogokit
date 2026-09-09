@@ -7,7 +7,7 @@ import math
 from textual.app import ComposeResult
 from textual.containers import Horizontal, VerticalScroll
 from textual.screen import Screen
-from textual.widgets import Button, DataTable, Input, Label, Static
+from textual.widgets import Button, DataTable, Static
 
 from cogokit.tui.widgets.form_fields import FloatField, SelectField
 from cogokit.tui.widgets.result_panel import ResultPanel
@@ -77,7 +77,6 @@ class CompassRuleScreen(Screen):
 
         try:
             from cogokit.adjustments.compass_rule import compass_rule
-            from cogokit.core import Point
 
             pts = self.app.current_job.points()
             if len(pts) < 3:

@@ -1,6 +1,5 @@
 """Tests for State Plane zone lookup."""
 
-import math
 
 import pytest
 

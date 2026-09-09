@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -84,7 +83,6 @@ def config_reset(
     global_: bool = typer.Option(False, "--global", help="Reset global config instead of project-local"),
 ) -> None:
     """Delete the configuration file (revert to defaults)."""
-    from pathlib import Path
 
     from cogokit.config.loader import GLOBAL_CONFIG_PATH, PROJECT_CONFIG_PATH
 

@@ -8,7 +8,7 @@ from textual.events import DescendantBlur, DescendantFocus
 from textual.message import Message
 from textual.widgets import DataTable, Header, Input
 
-from cogokit.config.loader import get_config, get_registry, reload_config
+from cogokit.config.loader import get_config, get_registry
 from cogokit.core.job import Job
 from cogokit.core.units import AngularUnit, LinearUnit
 from cogokit.tui.screens.main_menu import MainMenuScreen
