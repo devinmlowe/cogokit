@@ -1,7 +1,7 @@
 """Fetch all NAD83 SPCS zone definitions from epsg.io and write JSON.
 
 Run once: python scripts/fetch_spcs_zones.py
-Output: src/cogopro/data/spcs_zones.json
+Output: src/cogokit/data/spcs_zones.json
 """
 
 import json
@@ -140,7 +140,7 @@ def _urlopen(url: str) -> bytes:
     """Open a URL with a proper User-Agent header."""
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "cogopro-spcs-fetcher/1.0 (surveying library)"},
+        headers={"User-Agent": "cogokit-spcs-fetcher/1.0 (surveying library)"},
     )
     with urllib.request.urlopen(req, timeout=15) as r:
         return r.read()
@@ -206,7 +206,7 @@ def main():
                 zones[str(code)] = result
             time.sleep(0.5)
 
-    out_path = "src/cogopro/data/spcs_zones.json"
+    out_path = "src/cogokit/data/spcs_zones.json"
     with open(out_path, "w") as f:
         json.dump(zones, f, indent=2, sort_keys=True)
 
