@@ -7,7 +7,7 @@ from pathlib import Path
 from cogokit.core import Job, Point
 from cogokit.io import Delimiter, read_points, write_points
 
-SAMPLE_DIR = Path(__file__).parent.parent / "original" / "ASCII"
+SAMPLE_DIR = Path(__file__).parent / "data"
 
 
 class TestReadSampleFiles:
@@ -17,8 +17,8 @@ class TestReadSampleFiles:
         assert job.point_count == 6
         p10 = job.get_point(10)
         assert p10 is not None
-        assert math.isclose(p10.northing, 3000.0)
-        assert math.isclose(p10.easting, 3000.0)
+        assert math.isclose(p10.northing, 5000.0)
+        assert math.isclose(p10.easting, 5000.0)
         assert p10.description == "CORNER"
 
     def test_read_compass1(self):
@@ -27,7 +27,7 @@ class TestReadSampleFiles:
         assert job.point_count == 7
         p20 = job.get_point(20)
         assert p20 is not None
-        assert math.isclose(p20.northing, 3102.894, abs_tol=0.001)
+        assert math.isclose(p20.northing, 2000.0, abs_tol=0.001)
         assert p20.description == "CN"
 
     def test_read_compass2(self):
