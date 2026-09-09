@@ -206,4 +206,4 @@ This Python port preserves the mathematical algorithms while modernizing the arc
 
 ## License
 
-Private repository. All rights reserved.
+MIT License - see [LICENSE](LICENSE). Copyright (c) 2026 Devin Lowe.

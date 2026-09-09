@@ -7,12 +7,15 @@ name = "cogokit"
 version = "0.3.0"
 description = "Python reimplementation of COGO+ Pro surveying/coordinate geometry software"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{name = "Devin Lowe"}]
 keywords = ["surveying", "cogo", "coordinate-geometry", "geodesy", "state-plane", "landxml"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
