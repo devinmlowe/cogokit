@@ -6,7 +6,7 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 
 ## Features
 
-**660 tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI). Optional: [NumPy](https://numpy.org/) for least-squares network adjustment.
+**850+ tests** covering all computational modules. One runtime dependency ([Typer](https://typer.tiangolo.com/) for the CLI). Optional: [NumPy](https://numpy.org/) for least-squares network adjustment.
 
 ### Core (`cogokit.core`)
 
@@ -66,12 +66,18 @@ This project reverse-engineers the HP RPL calculator programs (libraries L930-L9
 ## Installation
 
 ```bash
-git clone git@github.com:devinmlowe/cogopro-python.git
-cd cogopro-python
+git clone git@github.com:devinmlowe/cogokit.git
+cd cogokit
 pip install -e ".[dev]"
 ```
 
-Requires Python 3.11+. Runtime dependency: `typer` (for CLI). Development: `pytest` and `ruff`. Optional: `pip install cogokit[lsa]` for least-squares network adjustment (NumPy).
+Requires Python 3.11+. Runtime dependency: `typer` (for CLI). Development: `pytest` and `ruff` (`[dev]`).
+
+Optional extras:
+
+- `pip install -e ".[lsa]"` - NumPy, for least-squares network adjustment
+- `pip install -e ".[tui]"` - Textual, for the interactive terminal UI (`cogokit-tui`)
+- `pip install -e ".[ifc]"` - ifcopenshell, for IFC 4X3 import/export
 
 ## Usage
 
@@ -136,12 +142,12 @@ cogokit inverse 1000 2000 1500 2500 --report ./reports/
 cogokit curve --radius 500 --delta 30 --report curve_report.html
 ```
 
-Run `cogokit --help` or `cogopro <command> --help` for full option details.
+Run `cogokit --help` or `cogokit <command> --help` for full option details.
 
 ## Running Tests
 
 ```bash
-pytest           # Run all 660 tests
+pytest           # Run all tests
 pytest -v        # Verbose output
 pytest tests/test_alignment.py  # Single module
 ```
@@ -149,7 +155,7 @@ pytest tests/test_alignment.py  # Single module
 ## Project Structure
 
 ```
-cogopro-python/
+cogokit/
   src/cogokit/
     cli.py          # Typer CLI
     core/           # Point, Angle, Job, CRS, Units
@@ -163,7 +169,7 @@ cogopro-python/
   examples/
     data/           # Sample point files and traverse observations
     reports/        # Example HTML reports for all 8 CLI commands
-  tests/            # 660 tests across 36 test files
+  tests/            # 850+ tests across 48 test files
   original/         # Original HP calculator source files (L930-L936)
 ```
 
@@ -181,18 +187,13 @@ cogopro-python/
 
 ## Next Steps
 
-### High Priority
-
-- **GPS baseline observations** ([#2](../../issues/2)) - Add 3D GPS baseline vectors to the least-squares network adjustment module (requires 3×3 variance-covariance weight model and ECEF coordinate frame).
-- **Interactive TUI** ([#3](../../issues/3)) - Build a terminal UI (via `textual`) mirroring the original cogokit menu system for interactive field use.
-
-### Lower Priority
-
-- **LandXML complex import** ([#4](../../issues/4)) - Import alignments and parcels from LandXML (currently export-only for these; point import is complete).
-- **Edge-case test hardening** ([#5](../../issues/5)) - Additional testing for antipodal Vincenty, near-zero curves, degenerate triangles, and boundary conditions.
-
 ### Completed
 
+- ~~**GPS baseline observations**~~ - 3D GPS baseline vectors in the least-squares network adjustment (3×3 variance-covariance weights, ECEF frame).
+- ~~**Interactive TUI**~~ - Terminal UI via `textual` (`cogokit-tui`, requires the `[tui]` extra).
+- ~~**LandXML complex import**~~ - Alignments and parcels import from LandXML.
+- ~~**Edge-case test hardening**~~ - Antipodal Vincenty, near-zero curves, degenerate triangles, boundary conditions.
+- ~~**IFC 4X3 export/import**~~ - Survey data interchange via ifcopenshell (requires the `[ifc]` extra).
 - ~~**Report generation**~~ - HTML field reports with SVG diagrams via `--report` flag on all CLI commands.
 - ~~**Point database backend**~~ - Job class backed by SQLite with in-memory default and optional persistent storage.
 - ~~**3D slope staking**~~ - Iterative catch-point computation on irregular ground surfaces with bilinear surface interpolation.
